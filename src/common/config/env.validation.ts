@@ -1,10 +1,20 @@
 import { plainToInstance } from 'class-transformer';
 import {
+  IsIn,
   IsNotEmpty,
   IsNumberString,
   IsString,
   validateSync,
 } from 'class-validator';
+
+const PINO_LOG_LEVELS = [
+  'trace',
+  'debug',
+  'info',
+  'warn',
+  'error',
+  'fatal',
+] as const;
 
 export class EnvironmentVariables {
   @IsString()
@@ -17,6 +27,9 @@ export class EnvironmentVariables {
 
   @IsNumberString()
   PORT!: string;
+
+  @IsIn(PINO_LOG_LEVELS)
+  LOG_LEVEL!: string;
 }
 
 export function validate(
