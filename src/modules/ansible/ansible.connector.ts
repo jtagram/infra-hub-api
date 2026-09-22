@@ -1,9 +1,9 @@
-import { execFile } from 'node:child_process';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import {
+  execFileAsync,
+  ExecFileError,
+} from '../../common/helpers/exec-file.helper';
 import { AnsiblePlaybookExecutionError } from './ansible.exception';
 import { AnsibleExecutionResult } from './ansible.dto';
 import { AnsibleMapper } from './ansible.mapper';
@@ -11,59 +11,53 @@ import { AnsibleMapper } from './ansible.mapper';
 @Injectable()
 export class AnsibleConnector {
   private static readonly PLAYBOOK_TIMEOUT_MS = 240_000;
-  private static readonly PLAYBOOK_FILE_NAME = 'playbook.yml';
-  private static readonly SSH_PRIVATE_KEY_PATH =
-    '/etc/ssh-keys/pcbox_deploy_key';
+  private static readonly ANSIBLE_PLAYBOOK_COMMAND = 'ansible-playbook';
 
-  constructor(private readonly configService: ConfigService) {}
+  private readonly sshHost: string;
+  private readonly sshUser: string;
 
-  async executePlaybook(fileContent: string): Promise<AnsibleExecutionResult> {
-    const sshHost = this.configService.get<string>('SERVER_SSH_HOST')!;
-    const sshUser = this.configService.get<string>('SERVER_SSH_USER')!;
-
-    const tempDir = await mkdtemp(join(tmpdir(), 'pcbox-playbook-'));
-    const playbookPath = join(tempDir, AnsibleConnector.PLAYBOOK_FILE_NAME);
-
-    try {
-      await writeFile(playbookPath, fileContent, 'utf8');
-      return await this.runAnsiblePlaybook(playbookPath, sshHost, sshUser);
-    } finally {
-      await rm(tempDir, { recursive: true, force: true });
-    }
+  constructor(private readonly configService: ConfigService) {
+    this.sshHost = this.configService.get<string>('SERVER_SSH_HOST')!;
+    this.sshUser = this.configService.get<string>('SERVER_SSH_USER')!;
   }
 
-  private async runAnsiblePlaybook(
+  async executePlaybook(
     playbookPath: string,
-    sshHost: string,
-    sshUser: string,
+    sshPrivateKeyPath: string,
   ): Promise<AnsibleExecutionResult> {
     try {
-      const { stdout, stderr } = await this.execFileAsync(
-        'ansible-playbook',
-        this.buildPlaybookArgs(playbookPath, sshHost, sshUser),
+      const { stdout, stderr } = await execFileAsync(
+        AnsibleConnector.ANSIBLE_PLAYBOOK_COMMAND,
+        this.buildPlaybookArgs(playbookPath, sshPrivateKeyPath),
         this.buildExecOptions(),
       );
       return AnsibleMapper.toSuccessResult(stdout, stderr);
     } catch (error) {
-      if (!(error instanceof AnsiblePlaybookExecutionError)) {
+      if (!(error instanceof ExecFileError)) {
         throw error;
       }
-      return AnsibleMapper.toFailureResult(error);
+      return AnsibleMapper.toFailureResult(
+        new AnsiblePlaybookExecutionError(
+          error.message,
+          error.code,
+          error.stdout,
+          error.stderr,
+        ),
+      );
     }
   }
 
   private buildPlaybookArgs(
     playbookPath: string,
-    sshHost: string,
-    sshUser: string,
+    sshPrivateKeyPath: string,
   ): string[] {
     return [
       '-i',
-      `${sshHost},`,
+      `${this.sshHost},`,
       '-u',
-      sshUser,
+      this.sshUser,
       '--private-key',
-      AnsibleConnector.SSH_PRIVATE_KEY_PATH,
+      sshPrivateKeyPath,
       '--ssh-common-args',
       '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null',
       playbookPath,
@@ -72,28 +66,5 @@ export class AnsibleConnector {
 
   private buildExecOptions(): { timeout: number } {
     return { timeout: AnsibleConnector.PLAYBOOK_TIMEOUT_MS };
-  }
-
-  private execFileAsync(
-    command: string,
-    args: string[],
-    options: { timeout: number },
-  ): Promise<{ stdout: string; stderr: string }> {
-    return new Promise((resolve, reject) => {
-      execFile(command, args, options, (error, stdout, stderr) => {
-        if (error) {
-          reject(
-            new AnsiblePlaybookExecutionError(
-              error.message,
-              error.code,
-              stdout,
-              stderr,
-            ),
-          );
-          return;
-        }
-        resolve({ stdout, stderr });
-      });
-    });
   }
 }

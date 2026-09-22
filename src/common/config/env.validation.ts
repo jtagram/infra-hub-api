@@ -25,6 +25,10 @@ export class EnvironmentVariables {
   @IsNotEmpty()
   SERVER_SSH_USER!: string;
 
+  @IsString()
+  @IsNotEmpty()
+  SERVER_SSH_PRIVATE_KEY!: string;
+
   @IsNumberString()
   PORT!: string;
 
