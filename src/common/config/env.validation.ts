@@ -34,6 +34,25 @@ export class EnvironmentVariables {
 
   @IsIn(PINO_LOG_LEVELS)
   LOG_LEVEL!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  DB_HOST!: string;
+
+  @IsNumberString()
+  DB_PORT!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  DB_USERNAME!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  DB_PASSWORD!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  DB_NAME!: string;
 }
 
 export function validate(
