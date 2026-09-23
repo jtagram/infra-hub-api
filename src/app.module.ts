@@ -6,6 +6,7 @@ import { DatabaseModule } from './common/database/database.module';
 import { LoggerModule } from './instrument/logger/logger.module';
 import { AnsibleModule } from './modules/ansible/ansible.module';
 import { DatabaseHubApiModule } from './modules/database-hub-api/database-hub-api.module';
+import { KubernetesHubApiModule } from './modules/kubernates-hub-api/kubernates-hub-api.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { DatabaseHubApiModule } from './modules/database-hub-api/database-hub-ap
     LoggerModule,
     AnsibleModule,
     DatabaseHubApiModule,
+    KubernetesHubApiModule,
   ],
   controllers: [AppController],
   providers: [AppService],
