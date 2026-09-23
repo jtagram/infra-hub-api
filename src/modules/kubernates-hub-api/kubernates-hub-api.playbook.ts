@@ -56,3 +56,39 @@ export function buildKubernetesManifestPlaybook(
 
   return dump(playbook);
 }
+
+export class KubernetesServerCommandPlaybookInput {
+  command!: string;
+}
+
+export class KubernetesServerCommandPlaybookInputBuilder {
+  private readonly input = new KubernetesServerCommandPlaybookInput();
+
+  withCommand(command: string): this {
+    this.input.command = command;
+    return this;
+  }
+
+  build(): KubernetesServerCommandPlaybookInput {
+    return this.input;
+  }
+}
+
+export function buildKubernetesServerCommandPlaybook(
+  input: KubernetesServerCommandPlaybookInput,
+): string {
+  const playbook = [
+    {
+      hosts: 'all',
+      gather_facts: false,
+      tasks: [
+        {
+          name: 'run server command',
+          'ansible.builtin.shell': input.command,
+        },
+      ],
+    },
+  ];
+
+  return dump(playbook);
+}

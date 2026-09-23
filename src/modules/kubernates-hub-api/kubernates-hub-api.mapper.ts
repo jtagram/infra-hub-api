@@ -3,10 +3,15 @@ import {
   InfrastructureOperationsLogEntity,
   InfrastructureOperationsLogEntityBuilder,
 } from '../../common/database/infrastructure-operatios-log.entity';
-import { ManageKubernetesDto } from './kubernates-hub-api.dto';
+import {
+  ManageKubernetesDto,
+  ManageKubernetesServerDto,
+} from './kubernates-hub-api.dto';
 import {
   KubernetesManifestPlaybookInput,
   KubernetesManifestPlaybookInputBuilder,
+  KubernetesServerCommandPlaybookInput,
+  KubernetesServerCommandPlaybookInputBuilder,
 } from './kubernates-hub-api.playbook';
 
 export class KubernetesHubApiMapper {
@@ -30,6 +35,26 @@ export class KubernetesHubApiMapper {
       .withInstruction(
         JSON.stringify({ action: dto.action, manifest: dto.manifest }),
       )
+      .withResponse(JSON.stringify(result))
+      .build();
+  }
+
+  static toKubernetesServerCommandPlaybookInput(
+    dto: ManageKubernetesServerDto,
+  ): KubernetesServerCommandPlaybookInput {
+    return new KubernetesServerCommandPlaybookInputBuilder()
+      .withCommand(dto.command)
+      .build();
+  }
+
+  static toServerOperationsLogEntity(
+    dto: ManageKubernetesServerDto,
+    result: AnsibleExecutionResult,
+  ): InfrastructureOperationsLogEntity {
+    return new InfrastructureOperationsLogEntityBuilder()
+      .withDepartment(dto.department)
+      .withNumberOfTicket(dto.numberOfTickets)
+      .withInstruction(JSON.stringify({ command: dto.command }))
       .withResponse(JSON.stringify(result))
       .build();
   }

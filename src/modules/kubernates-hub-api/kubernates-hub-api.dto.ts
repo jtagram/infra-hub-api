@@ -31,6 +31,20 @@ export class ManageKubernetesDto {
   manifest!: string;
 }
 
+export class ManageKubernetesServerDto {
+  @IsNotEmpty()
+  @IsInt()
+  numberOfTickets!: number;
+
+  @IsEnum(InfrastructureDepartment)
+  department!: InfrastructureDepartment;
+
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(4000)
+  command!: string;
+}
+
 export class KubernetesOperationResult {
   executionResult!: AnsibleExecutionResult;
   logId!: string;

@@ -7,9 +7,13 @@ import {
   KubernetesOperationResult,
   KubernetesOperationResultBuilder,
   ManageKubernetesDto,
+  ManageKubernetesServerDto,
 } from './kubernates-hub-api.dto';
 import { KubernetesHubApiMapper } from './kubernates-hub-api.mapper';
-import { buildKubernetesManifestPlaybook } from './kubernates-hub-api.playbook';
+import {
+  buildKubernetesManifestPlaybook,
+  buildKubernetesServerCommandPlaybook,
+} from './kubernates-hub-api.playbook';
 
 @Injectable()
 export class KubernetesHubApiService {
@@ -30,6 +34,25 @@ export class KubernetesHubApiService {
 
     const log = await this.operationsLogRepository.save(
       KubernetesHubApiMapper.toOperationsLogEntity(dto, result),
+    );
+
+    return new KubernetesOperationResultBuilder()
+      .withExecutionResult(result)
+      .withLogId(log.id)
+      .build();
+  }
+
+  async manageKubernetesServer(
+    dto: ManageKubernetesServerDto,
+  ): Promise<KubernetesOperationResult> {
+    const playbook = buildKubernetesServerCommandPlaybook(
+      KubernetesHubApiMapper.toKubernetesServerCommandPlaybookInput(dto),
+    );
+
+    const result = await this.ansibleService.execute(playbook);
+
+    const log = await this.operationsLogRepository.save(
+      KubernetesHubApiMapper.toServerOperationsLogEntity(dto, result),
     );
 
     return new KubernetesOperationResultBuilder()
