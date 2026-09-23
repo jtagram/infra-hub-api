@@ -23,7 +23,7 @@ export class KubernetesHubApiService {
     private readonly operationsLogRepository: Repository<InfrastructureOperationsLogEntity>,
   ) {}
 
-  async manageKubernetes(
+  async manageKubernatesManifest(
     dto: ManageKubernetesDto,
   ): Promise<KubernetesOperationResult> {
     const playbook = buildKubernetesManifestPlaybook(
