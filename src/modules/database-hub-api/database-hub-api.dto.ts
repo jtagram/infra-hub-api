@@ -1,14 +1,10 @@
-import { IsEnum, IsInt, IsNotEmpty, IsString, MaxLength } from 'class-validator';
-import { InfrastructureDepartment } from '../../common/database/infrastructure-operatios-log.entity';
+import { IsInt, IsNotEmpty, IsString, MaxLength } from 'class-validator';
 import { AnsibleExecutionResult } from '../ansible/ansible.service';
 
 export class ManageDatabaseDto {
   @IsNotEmpty()
   @IsInt()
   numberOfTickets!: number;
-
-  @IsEnum(InfrastructureDepartment)
-  department!: InfrastructureDepartment;
 
   @IsString()
   @IsNotEmpty()

@@ -12,14 +12,14 @@ export class KubernetesHubApiController {
     private readonly kubernetesHubApiService: KubernetesHubApiService,
   ) {}
 
-  @Post('manifest')
+  @Post('kubernate-manifest')
   async manageKubernetes(
     @Body() dto: ManageKubernetesDto,
   ): Promise<KubernetesOperationResult> {
     return this.kubernetesHubApiService.manageKubernetes(dto);
   }
 
-  @Post('server')
+  @Post('kubernetes-server')
   async manageKubernetesServer(
     @Body() dto: ManageKubernetesServerDto,
   ): Promise<KubernetesOperationResult> {

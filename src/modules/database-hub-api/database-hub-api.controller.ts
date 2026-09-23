@@ -8,7 +8,7 @@ export class DatabaseHubApiController {
     private readonly databaseHubApiService: DatabaseHubApiService,
   ) {}
 
-  @Post()
+  @Post('manage-database')
   async manageDatabase(
     @Body() dto: ManageDatabaseDto,
   ): Promise<DatabaseOperationResult> {

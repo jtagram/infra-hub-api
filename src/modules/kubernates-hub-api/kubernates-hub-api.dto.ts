@@ -1,11 +1,4 @@
-import {
-  IsEnum,
-  IsInt,
-  IsNotEmpty,
-  IsString,
-  MaxLength,
-} from 'class-validator';
-import { InfrastructureDepartment } from '../../common/database/infrastructure-operatios-log.entity';
+import { IsEnum, IsInt, IsNotEmpty, IsString, MaxLength } from 'class-validator';
 import { AnsibleExecutionResult } from '../ansible/ansible.service';
 import { KubernetesAction } from './kubernates-hub-api.playbook';
 
@@ -13,9 +6,6 @@ export class ManageKubernetesDto {
   @IsNotEmpty()
   @IsInt()
   numberOfTickets!: number;
-
-  @IsEnum(InfrastructureDepartment)
-  department!: InfrastructureDepartment;
 
   @IsString()
   @IsNotEmpty()
@@ -35,9 +25,6 @@ export class ManageKubernetesServerDto {
   @IsNotEmpty()
   @IsInt()
   numberOfTickets!: number;
-
-  @IsEnum(InfrastructureDepartment)
-  department!: InfrastructureDepartment;
 
   @IsString()
   @IsNotEmpty()

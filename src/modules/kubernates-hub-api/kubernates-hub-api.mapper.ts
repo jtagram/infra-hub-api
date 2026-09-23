@@ -1,5 +1,6 @@
 import { AnsibleExecutionResult } from '../ansible/ansible.service';
 import {
+  InfrastructureDepartment,
   InfrastructureOperationsLogEntity,
   InfrastructureOperationsLogEntityBuilder,
 } from '../../common/database/infrastructure-operatios-log.entity';
@@ -30,7 +31,7 @@ export class KubernetesHubApiMapper {
     result: AnsibleExecutionResult,
   ): InfrastructureOperationsLogEntity {
     return new InfrastructureOperationsLogEntityBuilder()
-      .withDepartment(dto.department)
+      .withDepartment(InfrastructureDepartment.KUBERNETES)
       .withNumberOfTicket(dto.numberOfTickets)
       .withInstruction(
         JSON.stringify({ action: dto.action, manifest: dto.manifest }),
@@ -52,7 +53,7 @@ export class KubernetesHubApiMapper {
     result: AnsibleExecutionResult,
   ): InfrastructureOperationsLogEntity {
     return new InfrastructureOperationsLogEntityBuilder()
-      .withDepartment(dto.department)
+      .withDepartment(InfrastructureDepartment.KUBERNETES)
       .withNumberOfTicket(dto.numberOfTickets)
       .withInstruction(JSON.stringify({ command: dto.command }))
       .withResponse(JSON.stringify(result))

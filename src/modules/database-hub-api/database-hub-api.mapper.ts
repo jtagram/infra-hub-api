@@ -1,5 +1,6 @@
 import { AnsibleExecutionResult } from '../ansible/ansible.service';
 import {
+  InfrastructureDepartment,
   InfrastructureOperationsLogEntity,
   InfrastructureOperationsLogEntityBuilder,
 } from '../../common/database/infrastructure-operatios-log.entity';
@@ -25,7 +26,7 @@ export class DatabaseHubApiMapper {
     result: AnsibleExecutionResult,
   ): InfrastructureOperationsLogEntity {
     return new InfrastructureOperationsLogEntityBuilder()
-      .withDepartment(dto.department)
+      .withDepartment(InfrastructureDepartment.DATABASE)
       .withNumberOfTicket(dto.numberOfTickets)
       .withInstruction(dto.sqlCode)
       .withResponse(JSON.stringify(result))
