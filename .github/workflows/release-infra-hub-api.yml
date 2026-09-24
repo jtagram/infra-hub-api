@@ -159,7 +159,7 @@ jobs:
         env:
           REPOSITORY_OWNER: ${{ github.repository_owner }}
         run: |
-          echo "::notice title=Este paso depende de infra-hub::El deploy real corre en otro workflow, no acá. Seguilo en vivo y confirmá que termine bien: https://github.com/$REPOSITORY_OWNER/infra-hub/actions/workflows/deploy-infra-hub-api.yml"
+          echo "::notice title=Este paso depende de deploy-hub-api::El deploy real corre en otro workflow, no acá. Seguilo en vivo y confirmá que termine bien: https://github.com/$REPOSITORY_OWNER/deploy-hub-api/actions/workflows/deploy-infra-hub-api.yml"
 
       - name: Escribir el link del deploy de infra-hub-api en GITHUB_STEP_SUMMARY.
         env:
@@ -228,7 +228,7 @@ jobs:
         run: .github/scripts/eliminar-tags-docker-hub.sh infra-hub-api /tmp/tags-to-delete.txt
 
       - name: Escribir los tags conservados en GITHUB_STEP_SUMMARY.
-        run: .github/scripts/render-kept-tags-summary.sh "$PREVIOUS_STABLE_TAG" "$NEW_TAG" /tmp/tags-to-keep.txt >> "$GITHUB_STEP_SUMMARY"
+        run: .github/scripts/renderizar-resumen-tags-conservados-docker-hub.sh "$PREVIOUS_STABLE_TAG" "$NEW_TAG" /tmp/tags-to-keep.txt >> "$GITHUB_STEP_SUMMARY"
 
       - name: Escribir los tags eliminados en GITHUB_STEP_SUMMARY.
         run: .github/scripts/renderizar-resumen-tags-eliminados.sh /tmp/tags-to-delete.txt >> "$GITHUB_STEP_SUMMARY"
