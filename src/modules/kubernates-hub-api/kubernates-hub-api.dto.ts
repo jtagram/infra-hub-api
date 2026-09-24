@@ -1,5 +1,5 @@
 import { IsEnum, IsInt, IsNotEmpty, IsString, MaxLength } from 'class-validator';
-import { AnsibleExecutionResult } from '../ansible/ansible.service';
+import { OperationResult, OperationResultBuilder } from '../../common/dto/operation-result.dto';
 import { KubernetesAction } from './kubernates-hub-api.playbook';
 
 export class ManageKubernetesDto {
@@ -32,25 +32,10 @@ export class ManageKubernetesServerDto {
   command!: string;
 }
 
-export class KubernetesOperationResult {
-  executionResult!: AnsibleExecutionResult;
-  logId!: string;
-}
+export class KubernetesOperationResult extends OperationResult {}
 
-export class KubernetesOperationResultBuilder {
-  private readonly kubernetesOperationResult = new KubernetesOperationResult();
-
-  withExecutionResult(executionResult: AnsibleExecutionResult): this {
-    this.kubernetesOperationResult.executionResult = executionResult;
-    return this;
-  }
-
-  withLogId(logId: string): this {
-    this.kubernetesOperationResult.logId = logId;
-    return this;
-  }
-
-  build(): KubernetesOperationResult {
-    return this.kubernetesOperationResult;
+export class KubernetesOperationResultBuilder extends OperationResultBuilder<KubernetesOperationResult> {
+  constructor() {
+    super(new KubernetesOperationResult());
   }
 }

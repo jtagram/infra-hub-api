@@ -1,5 +1,5 @@
 import { IsInt, IsNotEmpty, IsString, MaxLength } from 'class-validator';
-import { AnsibleExecutionResult } from '../ansible/ansible.service';
+import { OperationResult, OperationResultBuilder } from '../../common/dto/operation-result.dto';
 
 export class ManageDatabaseDto {
   @IsNotEmpty()
@@ -22,25 +22,10 @@ export class ManageDatabaseDto {
   sqlCode!: string;
 }
 
-export class DatabaseOperationResult {
-  executionResult!: AnsibleExecutionResult;
-  logId!: string;
-}
+export class DatabaseOperationResult extends OperationResult {}
 
-export class DatabaseOperationResultBuilder {
-  private readonly databaseOperationResult = new DatabaseOperationResult();
-
-  withExecutionResult(executionResult: AnsibleExecutionResult): this {
-    this.databaseOperationResult.executionResult = executionResult;
-    return this;
-  }
-
-  withLogId(logId: string): this {
-    this.databaseOperationResult.logId = logId;
-    return this;
-  }
-
-  build(): DatabaseOperationResult {
-    return this.databaseOperationResult;
+export class DatabaseOperationResultBuilder extends OperationResultBuilder<DatabaseOperationResult> {
+  constructor() {
+    super(new DatabaseOperationResult());
   }
 }
