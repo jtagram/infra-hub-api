@@ -1,6 +1,7 @@
 import { Body, Controller, Post } from '@nestjs/common';
+import { OperationResult } from '../../common/dto/operation-result.dto';
 import { ServerHubApiService } from './server-hub-api.service';
-import { ManageServerDto, ServerOperationResult } from './server-hub-api.dto';
+import { ManageServerDto } from './server-hub-api.dto';
 
 @Controller('server-hub-api')
 export class ServerHubApiController {
@@ -9,7 +10,7 @@ export class ServerHubApiController {
   @Post('manage-server')
   async manageServer(
     @Body() dto: ManageServerDto,
-  ): Promise<ServerOperationResult> {
+  ): Promise<OperationResult> {
     return this.serverHubApiService.manageServer(dto);
   }
 }

@@ -5,12 +5,8 @@ export class OperationResult {
   logId!: string;
 }
 
-export class OperationResultBuilder<T extends OperationResult> {
-  protected readonly operationResult: T;
-
-  constructor(instance: T) {
-    this.operationResult = instance;
-  }
+export class OperationResultBuilder {
+  private readonly operationResult = new OperationResult();
 
   withExecutionResult(executionResult: AnsibleExecutionResult): this {
     this.operationResult.executionResult = executionResult;
@@ -22,7 +18,7 @@ export class OperationResultBuilder<T extends OperationResult> {
     return this;
   }
 
-  build(): T {
+  build(): OperationResult {
     return this.operationResult;
   }
 }

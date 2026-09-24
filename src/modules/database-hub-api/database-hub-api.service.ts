@@ -2,12 +2,12 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { InfrastructureOperationsLogEntity } from '../../common/database/infrastructure-operatios-log.entity';
-import { AnsibleService } from '../ansible/ansible.service';
 import {
-  DatabaseOperationResult,
-  DatabaseOperationResultBuilder,
-  ManageDatabaseDto,
-} from './database-hub-api.dto';
+  OperationResult,
+  OperationResultBuilder,
+} from '../../common/dto/operation-result.dto';
+import { AnsibleService } from '../ansible/ansible.service';
+import { ManageDatabaseDto } from './database-hub-api.dto';
 import { DatabaseHubApiMapper } from './database-hub-api.mapper';
 import { buildPostgresSqlPlaybook } from './database-hub-api.playbook';
 
@@ -19,9 +19,7 @@ export class DatabaseHubApiService {
     private readonly operationsLogRepository: Repository<InfrastructureOperationsLogEntity>,
   ) {}
 
-  async manageDatabase(
-    dto: ManageDatabaseDto,
-  ): Promise<DatabaseOperationResult> {
+  async manageDatabase(dto: ManageDatabaseDto): Promise<OperationResult> {
     const playbook = buildPostgresSqlPlaybook(
       DatabaseHubApiMapper.toPostgresSqlPlaybookInput(dto),
     );
@@ -32,7 +30,7 @@ export class DatabaseHubApiService {
       DatabaseHubApiMapper.toOperationsLogEntity(dto, result),
     );
 
-    return new DatabaseOperationResultBuilder()
+    return new OperationResultBuilder()
       .withExecutionResult(result)
       .withLogId(log.id)
       .build();

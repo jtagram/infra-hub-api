@@ -2,10 +2,12 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { InfrastructureOperationsLogEntity } from '../../common/database/infrastructure-operatios-log.entity';
+import {
+  OperationResult,
+  OperationResultBuilder,
+} from '../../common/dto/operation-result.dto';
 import { AnsibleService } from '../ansible/ansible.service';
 import {
-  KubernetesOperationResult,
-  KubernetesOperationResultBuilder,
   ManageKubernetesDto,
   ManageKubernetesServerDto,
 } from './kubernates-hub-api.dto';
@@ -25,7 +27,7 @@ export class KubernetesHubApiService {
 
   async manageKubernatesManifest(
     dto: ManageKubernetesDto,
-  ): Promise<KubernetesOperationResult> {
+  ): Promise<OperationResult> {
     const playbook = buildKubernetesManifestPlaybook(
       KubernetesHubApiMapper.toKubernetesManifestPlaybookInput(dto),
     );
@@ -36,7 +38,7 @@ export class KubernetesHubApiService {
       KubernetesHubApiMapper.toOperationsLogEntity(dto, result),
     );
 
-    return new KubernetesOperationResultBuilder()
+    return new OperationResultBuilder()
       .withExecutionResult(result)
       .withLogId(log.id)
       .build();
@@ -44,7 +46,7 @@ export class KubernetesHubApiService {
 
   async manageKubernetesServer(
     dto: ManageKubernetesServerDto,
-  ): Promise<KubernetesOperationResult> {
+  ): Promise<OperationResult> {
     const playbook = buildKubernetesServerCommandPlaybook(
       KubernetesHubApiMapper.toKubernetesServerCommandPlaybookInput(dto),
     );
@@ -55,7 +57,7 @@ export class KubernetesHubApiService {
       KubernetesHubApiMapper.toServerOperationsLogEntity(dto, result),
     );
 
-    return new KubernetesOperationResultBuilder()
+    return new OperationResultBuilder()
       .withExecutionResult(result)
       .withLogId(log.id)
       .build();

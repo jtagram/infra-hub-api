@@ -1,7 +1,7 @@
 import { Body, Controller, Post } from '@nestjs/common';
+import { OperationResult } from '../../common/dto/operation-result.dto';
 import { KubernetesHubApiService } from './kubernates-hub-api.service';
 import {
-  KubernetesOperationResult,
   ManageKubernetesDto,
   ManageKubernetesServerDto,
 } from './kubernates-hub-api.dto';
@@ -15,14 +15,14 @@ export class KubernetesHubApiController {
   @Post('manage-manifest')
   async manageKubernatesManifest(
     @Body() dto: ManageKubernetesDto,
-  ): Promise<KubernetesOperationResult> {
+  ): Promise<OperationResult> {
     return this.kubernetesHubApiService.manageKubernatesManifest(dto);
   }
 
   @Post('manage-server')
   async manageKubernetesServer(
     @Body() dto: ManageKubernetesServerDto,
-  ): Promise<KubernetesOperationResult> {
+  ): Promise<OperationResult> {
     return this.kubernetesHubApiService.manageKubernetesServer(dto);
   }
 }

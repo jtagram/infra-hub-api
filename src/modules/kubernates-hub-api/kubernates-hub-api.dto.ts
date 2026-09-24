@@ -1,5 +1,4 @@
 import { IsEnum, IsInt, IsNotEmpty, IsString, MaxLength } from 'class-validator';
-import { OperationResult, OperationResultBuilder } from '../../common/dto/operation-result.dto';
 import { KubernetesAction } from './kubernates-hub-api.playbook';
 
 export class ManageKubernetesDto {
@@ -30,12 +29,4 @@ export class ManageKubernetesServerDto {
   @IsNotEmpty()
   @MaxLength(4000)
   command!: string;
-}
-
-export class KubernetesOperationResult extends OperationResult {}
-
-export class KubernetesOperationResultBuilder extends OperationResultBuilder<KubernetesOperationResult> {
-  constructor() {
-    super(new KubernetesOperationResult());
-  }
 }

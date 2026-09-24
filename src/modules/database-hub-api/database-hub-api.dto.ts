@@ -1,5 +1,4 @@
 import { IsInt, IsNotEmpty, IsString, MaxLength } from 'class-validator';
-import { OperationResult, OperationResultBuilder } from '../../common/dto/operation-result.dto';
 
 export class ManageDatabaseDto {
   @IsNotEmpty()
@@ -20,12 +19,4 @@ export class ManageDatabaseDto {
   @IsNotEmpty()
   @MaxLength(5000)
   sqlCode!: string;
-}
-
-export class DatabaseOperationResult extends OperationResult {}
-
-export class DatabaseOperationResultBuilder extends OperationResultBuilder<DatabaseOperationResult> {
-  constructor() {
-    super(new DatabaseOperationResult());
-  }
 }

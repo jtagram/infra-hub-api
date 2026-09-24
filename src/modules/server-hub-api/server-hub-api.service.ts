@@ -2,12 +2,12 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { InfrastructureOperationsLogEntity } from '../../common/database/infrastructure-operatios-log.entity';
-import { AnsibleService } from '../ansible/ansible.service';
 import {
-  ManageServerDto,
-  ServerOperationResult,
-  ServerOperationResultBuilder,
-} from './server-hub-api.dto';
+  OperationResult,
+  OperationResultBuilder,
+} from '../../common/dto/operation-result.dto';
+import { AnsibleService } from '../ansible/ansible.service';
+import { ManageServerDto } from './server-hub-api.dto';
 import { ServerHubApiMapper } from './server-hub-api.mapper';
 import { buildServerCommandPlaybook } from './server-hub-api.playbook';
 
@@ -19,7 +19,7 @@ export class ServerHubApiService {
     private readonly operationsLogRepository: Repository<InfrastructureOperationsLogEntity>,
   ) {}
 
-  async manageServer(dto: ManageServerDto): Promise<ServerOperationResult> {
+  async manageServer(dto: ManageServerDto): Promise<OperationResult> {
     const playbook = buildServerCommandPlaybook(
       ServerHubApiMapper.toServerCommandPlaybookInput(dto),
     );
@@ -30,7 +30,7 @@ export class ServerHubApiService {
       ServerHubApiMapper.toOperationsLogEntity(dto, result),
     );
 
-    return new ServerOperationResultBuilder()
+    return new OperationResultBuilder()
       .withExecutionResult(result)
       .withLogId(log.id)
       .build();
