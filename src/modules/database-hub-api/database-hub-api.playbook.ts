@@ -1,10 +1,10 @@
 import { dump } from 'js-yaml';
 
-const POSTGRES_DEPLOYMENT = 'postgres';
 const POSTGRES_SUPERUSER = 'postgres';
 
 export class PostgresSqlPlaybookInput {
   namespace!: string;
+  deployment!: string;
   dbName!: string;
   sqlCode!: string;
 }
@@ -14,6 +14,11 @@ export class PostgresSqlPlaybookInputBuilder {
 
   withNamespace(namespace: string): this {
     this.input.namespace = namespace;
+    return this;
+  }
+
+  withDeployment(deployment: string): this {
+    this.input.deployment = deployment;
     return this;
   }
 
@@ -46,7 +51,7 @@ export function buildPostgresSqlPlaybook(
             argv: [
               'kubectl',
               'exec',
-              `deploy/${POSTGRES_DEPLOYMENT}`,
+              `deploy/${input.deployment}`,
               '-n',
               input.namespace,
               '--',

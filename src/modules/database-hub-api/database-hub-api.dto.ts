@@ -13,6 +13,11 @@ export class ManageDatabaseDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(63)
+  deployment!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(63)
   dbName!: string;
 
   @IsString()

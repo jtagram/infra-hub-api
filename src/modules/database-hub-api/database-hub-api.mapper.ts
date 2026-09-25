@@ -16,6 +16,7 @@ export class DatabaseHubApiMapper {
   ): PostgresSqlPlaybookInput {
     return new PostgresSqlPlaybookInputBuilder()
       .withNamespace(dto.namespace)
+      .withDeployment(dto.deployment)
       .withDbName(dto.dbName)
       .withSqlCode(dto.sqlCode)
       .build();
