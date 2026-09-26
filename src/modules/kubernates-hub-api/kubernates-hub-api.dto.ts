@@ -27,7 +27,7 @@ export class ListDeploymentsDto {
   namespace!: string;
 }
 
-export class ManageKubernetesServerDto {
+export class ExecuteKubectlCommandDto {
   @IsNotEmpty()
   @IsInt()
   numberOfTickets!: number;
@@ -35,5 +35,5 @@ export class ManageKubernetesServerDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(4000)
-  command!: string;
+  kubectlCommand!: string;
 }

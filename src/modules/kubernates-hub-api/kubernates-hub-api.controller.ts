@@ -2,9 +2,9 @@ import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { OperationResult } from '../../common/dto/operation-result.dto';
 import { KubernetesHubApiService } from './kubernates-hub-api.service';
 import {
+  ExecuteKubectlCommandDto,
   ListDeploymentsDto,
   ManageKubernetesDto,
-  ManageKubernetesServerDto,
 } from './kubernates-hub-api.dto';
 
 @Controller('kubernates-hub-api')
@@ -28,10 +28,10 @@ export class KubernetesHubApiController {
     return this.kubernetesHubApiService.manageKubernatesManifest(dto);
   }
 
-  @Post('manage-server')
-  async manageKubernetesServer(
-    @Body() dto: ManageKubernetesServerDto,
+  @Post('execute-kubectl')
+  async executeKubectlCommand(
+    @Body() dto: ExecuteKubectlCommandDto,
   ): Promise<OperationResult> {
-    return this.kubernetesHubApiService.manageKubernetesServer(dto);
+    return this.kubernetesHubApiService.executeKubectlCommand(dto);
   }
 }

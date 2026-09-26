@@ -84,25 +84,25 @@ export function buildListDeploymentsPlaybook(namespace: string): string {
   return dump(playbook);
 }
 
-export class KubernetesServerCommandPlaybookInput {
-  command!: string;
+export class KubectlCommandPlaybookInput {
+  kubectlCommand!: string;
 }
 
-export class KubernetesServerCommandPlaybookInputBuilder {
-  private readonly input = new KubernetesServerCommandPlaybookInput();
+export class KubectlCommandPlaybookInputBuilder {
+  private readonly input = new KubectlCommandPlaybookInput();
 
-  withCommand(command: string): this {
-    this.input.command = command;
+  withKubectlCommand(kubectlCommand: string): this {
+    this.input.kubectlCommand = kubectlCommand;
     return this;
   }
 
-  build(): KubernetesServerCommandPlaybookInput {
+  build(): KubectlCommandPlaybookInput {
     return this.input;
   }
 }
 
-export function buildKubernetesServerCommandPlaybook(
-  input: KubernetesServerCommandPlaybookInput,
+export function buildKubectlCommandPlaybook(
+  input: KubectlCommandPlaybookInput,
 ): string {
   const playbook = [
     {
@@ -110,8 +110,10 @@ export function buildKubernetesServerCommandPlaybook(
       gather_facts: false,
       tasks: [
         {
-          name: 'run server command',
-          'ansible.builtin.shell': input.command,
+          name: 'run kubectl command',
+          'ansible.builtin.command': {
+            argv: ['kubectl', ...input.kubectlCommand.trim().split(/\s+/)],
+          },
         },
       ],
     },

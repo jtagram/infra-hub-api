@@ -5,14 +5,14 @@ import {
   InfrastructureOperationsLogEntityBuilder,
 } from '../../common/database/infrastructure-operatios-log.entity';
 import {
+  ExecuteKubectlCommandDto,
   ManageKubernetesDto,
-  ManageKubernetesServerDto,
 } from './kubernates-hub-api.dto';
 import {
+  KubectlCommandPlaybookInput,
+  KubectlCommandPlaybookInputBuilder,
   KubernetesManifestPlaybookInput,
   KubernetesManifestPlaybookInputBuilder,
-  KubernetesServerCommandPlaybookInput,
-  KubernetesServerCommandPlaybookInputBuilder,
 } from './kubernates-hub-api.playbook';
 
 export class KubernetesHubApiMapper {
@@ -40,22 +40,22 @@ export class KubernetesHubApiMapper {
       .build();
   }
 
-  static toKubernetesServerCommandPlaybookInput(
-    dto: ManageKubernetesServerDto,
-  ): KubernetesServerCommandPlaybookInput {
-    return new KubernetesServerCommandPlaybookInputBuilder()
-      .withCommand(dto.command)
+  static toKubectlCommandPlaybookInput(
+    dto: ExecuteKubectlCommandDto,
+  ): KubectlCommandPlaybookInput {
+    return new KubectlCommandPlaybookInputBuilder()
+      .withKubectlCommand(dto.kubectlCommand)
       .build();
   }
 
-  static toServerOperationsLogEntity(
-    dto: ManageKubernetesServerDto,
+  static toKubectlCommandOperationsLogEntity(
+    dto: ExecuteKubectlCommandDto,
     result: AnsibleExecutionResult,
   ): InfrastructureOperationsLogEntity {
     return new InfrastructureOperationsLogEntityBuilder()
       .withDepartment(InfrastructureDepartment.KUBERNETES)
       .withNumberOfTicket(dto.numberOfTickets)
-      .withInstruction(JSON.stringify({ command: dto.command }))
+      .withInstruction(JSON.stringify({ kubectlCommand: dto.kubectlCommand }))
       .withResponse(JSON.stringify(result))
       .build();
   }

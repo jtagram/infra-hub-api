@@ -8,14 +8,14 @@ import {
 } from '../../common/dto/operation-result.dto';
 import { AnsibleService } from '../ansible/ansible.service';
 import {
+  ExecuteKubectlCommandDto,
   ListDeploymentsDto,
   ManageKubernetesDto,
-  ManageKubernetesServerDto,
 } from './kubernates-hub-api.dto';
 import { KubernetesHubApiMapper } from './kubernates-hub-api.mapper';
 import {
+  buildKubectlCommandPlaybook,
   buildKubernetesManifestPlaybook,
-  buildKubernetesServerCommandPlaybook,
   buildListDeploymentsPlaybook,
 } from './kubernates-hub-api.playbook';
 
@@ -62,17 +62,17 @@ export class KubernetesHubApiService {
       .filter((name) => name.length > 0);
   }
 
-  async manageKubernetesServer(
-    dto: ManageKubernetesServerDto,
+  async executeKubectlCommand(
+    dto: ExecuteKubectlCommandDto,
   ): Promise<OperationResult> {
-    const playbook = buildKubernetesServerCommandPlaybook(
-      KubernetesHubApiMapper.toKubernetesServerCommandPlaybookInput(dto),
+    const playbook = buildKubectlCommandPlaybook(
+      KubernetesHubApiMapper.toKubectlCommandPlaybookInput(dto),
     );
 
     const result = await this.ansibleService.execute(playbook);
 
     const log = await this.operationsLogRepository.save(
-      KubernetesHubApiMapper.toServerOperationsLogEntity(dto, result),
+      KubernetesHubApiMapper.toKubectlCommandOperationsLogEntity(dto, result),
     );
 
     return new OperationResultBuilder()
