@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadGatewayException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { InfrastructureOperationsLogEntity } from '../../common/database/infrastructure-operatios-log.entity';
@@ -7,9 +7,14 @@ import {
   OperationResultBuilder,
 } from '../../common/dto/operation-result.dto';
 import { AnsibleService } from '../ansible/ansible.service';
-import { ManageDatabaseDto } from './database-hub-api.dto';
+import { ListDatabasesDto, ManageDatabaseDto } from './database-hub-api.dto';
 import { DatabaseHubApiMapper } from './database-hub-api.mapper';
-import { buildPostgresSqlPlaybook } from './database-hub-api.playbook';
+import {
+  buildListDatabasesPlaybook,
+  buildPostgresSqlPlaybook,
+} from './database-hub-api.playbook';
+
+const LIST_DATABASES_FAILED_MESSAGE = 'Failed to list databases';
 
 @Injectable()
 export class DatabaseHubApiService {
@@ -18,6 +23,20 @@ export class DatabaseHubApiService {
     @InjectRepository(InfrastructureOperationsLogEntity)
     private readonly operationsLogRepository: Repository<InfrastructureOperationsLogEntity>,
   ) {}
+
+  async listDatabases(dto: ListDatabasesDto): Promise<string[]> {
+    const playbook = buildListDatabasesPlaybook(dto.namespace, dto.deployment);
+    const result = await this.ansibleService.execute(playbook);
+
+    if (!result.success) {
+      throw new BadGatewayException(LIST_DATABASES_FAILED_MESSAGE);
+    }
+
+    return result.stdout
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0);
+  }
 
   async manageDatabase(dto: ManageDatabaseDto): Promise<OperationResult> {
     const playbook = buildPostgresSqlPlaybook(

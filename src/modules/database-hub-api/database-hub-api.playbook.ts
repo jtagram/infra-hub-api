@@ -73,3 +73,40 @@ export function buildPostgresSqlPlaybook(
 
   return dump(playbook);
 }
+
+const LIST_DATABASES_QUERY =
+  'SELECT datname FROM pg_database WHERE datistemplate = false;';
+
+export function buildListDatabasesPlaybook(
+  namespace: string,
+  deployment: string,
+): string {
+  const playbook = [
+    {
+      hosts: 'all',
+      gather_facts: false,
+      tasks: [
+        {
+          name: 'List databases in target deployment',
+          'ansible.builtin.command': {
+            argv: [
+              'kubectl',
+              'exec',
+              `deploy/${deployment}`,
+              '-n',
+              namespace,
+              '--',
+              'psql',
+              '-U',
+              POSTGRES_SUPERUSER,
+              '-tAc',
+              LIST_DATABASES_QUERY,
+            ],
+          },
+        },
+      ],
+    },
+  ];
+
+  return dump(playbook);
+}

@@ -25,3 +25,15 @@ export class ManageDatabaseDto {
   @MaxLength(5000)
   sqlCode!: string;
 }
+
+export class ListDatabasesDto {
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(63)
+  namespace!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(63)
+  deployment!: string;
+}

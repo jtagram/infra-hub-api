@@ -57,6 +57,33 @@ export function buildKubernetesManifestPlaybook(
   return dump(playbook);
 }
 
+export function buildListDeploymentsPlaybook(namespace: string): string {
+  const playbook = [
+    {
+      hosts: 'all',
+      gather_facts: false,
+      tasks: [
+        {
+          name: 'List deployments in namespace',
+          'ansible.builtin.command': {
+            argv: [
+              'kubectl',
+              'get',
+              'deployments',
+              '-n',
+              namespace,
+              '-o',
+              'jsonpath={.items[*].metadata.name}',
+            ],
+          },
+        },
+      ],
+    },
+  ];
+
+  return dump(playbook);
+}
+
 export class KubernetesServerCommandPlaybookInput {
   command!: string;
 }

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadGatewayException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { InfrastructureOperationsLogEntity } from '../../common/database/infrastructure-operatios-log.entity';
@@ -8,6 +8,7 @@ import {
 } from '../../common/dto/operation-result.dto';
 import { AnsibleService } from '../ansible/ansible.service';
 import {
+  ListDeploymentsDto,
   ManageKubernetesDto,
   ManageKubernetesServerDto,
 } from './kubernates-hub-api.dto';
@@ -15,7 +16,10 @@ import { KubernetesHubApiMapper } from './kubernates-hub-api.mapper';
 import {
   buildKubernetesManifestPlaybook,
   buildKubernetesServerCommandPlaybook,
+  buildListDeploymentsPlaybook,
 } from './kubernates-hub-api.playbook';
+
+const LIST_DEPLOYMENTS_FAILED_MESSAGE = 'Failed to list deployments';
 
 @Injectable()
 export class KubernetesHubApiService {
@@ -42,6 +46,20 @@ export class KubernetesHubApiService {
       .withExecutionResult(result)
       .withLogId(log.id)
       .build();
+  }
+
+  async listDeployments(dto: ListDeploymentsDto): Promise<string[]> {
+    const playbook = buildListDeploymentsPlaybook(dto.namespace);
+    const result = await this.ansibleService.execute(playbook);
+
+    if (!result.success) {
+      throw new BadGatewayException(LIST_DEPLOYMENTS_FAILED_MESSAGE);
+    }
+
+    return result.stdout
+      .trim()
+      .split(/\s+/)
+      .filter((name) => name.length > 0);
   }
 
   async manageKubernetesServer(

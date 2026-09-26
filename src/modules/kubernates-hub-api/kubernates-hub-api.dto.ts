@@ -20,6 +20,13 @@ export class ManageKubernetesDto {
   manifest!: string;
 }
 
+export class ListDeploymentsDto {
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(63)
+  namespace!: string;
+}
+
 export class ManageKubernetesServerDto {
   @IsNotEmpty()
   @IsInt()
