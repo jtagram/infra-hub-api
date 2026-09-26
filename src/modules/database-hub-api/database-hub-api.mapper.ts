@@ -4,7 +4,7 @@ import {
   InfrastructureOperationsLogEntity,
   InfrastructureOperationsLogEntityBuilder,
 } from '../../common/database/infrastructure-operatios-log.entity';
-import { ManageDatabaseDto } from './database-hub-api.dto';
+import { CreateDatabaseDto, ManageDatabaseDto } from './database-hub-api.dto';
 import {
   PostgresSqlPlaybookInput,
   PostgresSqlPlaybookInputBuilder,
@@ -30,6 +30,18 @@ export class DatabaseHubApiMapper {
       .withDepartment(InfrastructureDepartment.DATABASE)
       .withNumberOfTicket(dto.numberOfTickets)
       .withInstruction(dto.sqlCode)
+      .withResponse(JSON.stringify(result))
+      .build();
+  }
+
+  static toCreateDatabaseOperationsLogEntity(
+    dto: CreateDatabaseDto,
+    result: AnsibleExecutionResult,
+  ): InfrastructureOperationsLogEntity {
+    return new InfrastructureOperationsLogEntityBuilder()
+      .withDepartment(InfrastructureDepartment.DATABASE)
+      .withNumberOfTicket(dto.numberOfTickets)
+      .withInstruction(`CREATE DATABASE "${dto.dbName}";`)
       .withResponse(JSON.stringify(result))
       .build();
   }

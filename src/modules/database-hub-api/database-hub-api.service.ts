@@ -7,9 +7,14 @@ import {
   OperationResultBuilder,
 } from '../../common/dto/operation-result.dto';
 import { AnsibleService } from '../ansible/ansible.service';
-import { ListDatabasesDto, ManageDatabaseDto } from './database-hub-api.dto';
+import {
+  CreateDatabaseDto,
+  ListDatabasesDto,
+  ManageDatabaseDto,
+} from './database-hub-api.dto';
 import { DatabaseHubApiMapper } from './database-hub-api.mapper';
 import {
+  buildCreateDatabasePlaybook,
   buildListDatabasesPlaybook,
   buildPostgresSqlPlaybook,
 } from './database-hub-api.playbook';
@@ -47,6 +52,25 @@ export class DatabaseHubApiService {
 
     const log = await this.operationsLogRepository.save(
       DatabaseHubApiMapper.toOperationsLogEntity(dto, result),
+    );
+
+    return new OperationResultBuilder()
+      .withExecutionResult(result)
+      .withLogId(log.id)
+      .build();
+  }
+
+  async createDatabase(dto: CreateDatabaseDto): Promise<OperationResult> {
+    const playbook = buildCreateDatabasePlaybook(
+      dto.namespace,
+      dto.deployment,
+      dto.dbName,
+    );
+
+    const result = await this.ansibleService.execute(playbook);
+
+    const log = await this.operationsLogRepository.save(
+      DatabaseHubApiMapper.toCreateDatabaseOperationsLogEntity(dto, result),
     );
 
     return new OperationResultBuilder()

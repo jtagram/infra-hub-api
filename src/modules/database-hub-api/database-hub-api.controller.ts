@@ -1,7 +1,11 @@
 import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { OperationResult } from '../../common/dto/operation-result.dto';
 import { DatabaseHubApiService } from './database-hub-api.service';
-import { ListDatabasesDto, ManageDatabaseDto } from './database-hub-api.dto';
+import {
+  CreateDatabaseDto,
+  ListDatabasesDto,
+  ManageDatabaseDto,
+} from './database-hub-api.dto';
 
 @Controller('database-hub-api')
 export class DatabaseHubApiController {
@@ -22,5 +26,12 @@ export class DatabaseHubApiController {
     @Body() dto: ManageDatabaseDto,
   ): Promise<OperationResult> {
     return this.databaseHubApiService.manageDatabase(dto);
+  }
+
+  @Post('create-database')
+  async createDatabase(
+    @Body() dto: CreateDatabaseDto,
+  ): Promise<OperationResult> {
+    return this.databaseHubApiService.createDatabase(dto);
   }
 }

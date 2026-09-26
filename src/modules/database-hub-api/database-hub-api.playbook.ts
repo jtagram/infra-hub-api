@@ -1,6 +1,7 @@
 import { dump } from 'js-yaml';
 
 const POSTGRES_SUPERUSER = 'postgres';
+const POSTGRES_ADMIN_DATABASE = 'postgres';
 
 export class PostgresSqlPlaybookInput {
   namespace!: string;
@@ -64,6 +65,45 @@ export function buildPostgresSqlPlaybook(
               'ON_ERROR_STOP=1',
               '-c',
               input.sqlCode,
+            ],
+          },
+        },
+      ],
+    },
+  ];
+
+  return dump(playbook);
+}
+
+export function buildCreateDatabasePlaybook(
+  namespace: string,
+  deployment: string,
+  dbName: string,
+): string {
+  const playbook = [
+    {
+      hosts: 'all',
+      gather_facts: false,
+      tasks: [
+        {
+          name: 'Create database',
+          'ansible.builtin.command': {
+            argv: [
+              'kubectl',
+              'exec',
+              `deploy/${deployment}`,
+              '-n',
+              namespace,
+              '--',
+              'psql',
+              '-U',
+              POSTGRES_SUPERUSER,
+              '-d',
+              POSTGRES_ADMIN_DATABASE,
+              '-v',
+              'ON_ERROR_STOP=1',
+              '-c',
+              `CREATE DATABASE "${dbName}";`,
             ],
           },
         },
