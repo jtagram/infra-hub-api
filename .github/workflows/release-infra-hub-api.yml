@@ -41,10 +41,10 @@ jobs:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
         run: .github/scripts/validar-secreto.sh DOCKERHUB_USERNAME "$DOCKERHUB_USERNAME"
 
-      - name: Verificar que el secret INFRA_HUB_DISPATCH_TOKEN esté definido.
+      - name: Verificar que el secret INFRA_HUB_API_DISPATCH_TOKEN esté definido.
         env:
-          INFRA_HUB_DISPATCH_TOKEN: ${{ secrets.INFRA_HUB_DISPATCH_TOKEN }}
-        run: .github/scripts/validar-secreto.sh INFRA_HUB_DISPATCH_TOKEN "$INFRA_HUB_DISPATCH_TOKEN"
+          INFRA_HUB_API_DISPATCH_TOKEN: ${{ secrets.INFRA_HUB_API_DISPATCH_TOKEN }}
+        run: .github/scripts/validar-secreto.sh INFRA_HUB_API_DISPATCH_TOKEN "$INFRA_HUB_API_DISPATCH_TOKEN"
 
       - name: Validar que el input del tag estable anterior tenga el formato vNUMERO.NUMERO.NUMERO.
         env:
@@ -150,7 +150,7 @@ jobs:
 
       - name: Habilitar workflow_dispatch en deploy-hub-api para desplegar la imagen infra-hub-api.
         env:
-          GH_TOKEN: ${{ secrets.INFRA_HUB_DISPATCH_TOKEN }}
+          GH_TOKEN: ${{ secrets.INFRA_HUB_API_DISPATCH_TOKEN }}
           REPOSITORY_OWNER: ${{ github.repository_owner }}
           IMAGE_TAG: ${{ inputs.new_tag }}
         run: .github/scripts/disparar-deploy-infra-hub-api.sh "$REPOSITORY_OWNER" "$IMAGE_TAG"
@@ -170,7 +170,7 @@ jobs:
 
       - name: Esperar a que finalice la ejecución de deploy disparada en infra-hub.
         env:
-          GH_TOKEN: ${{ secrets.INFRA_HUB_DISPATCH_TOKEN }}
+          GH_TOKEN: ${{ secrets.INFRA_HUB_API_DISPATCH_TOKEN }}
           REPOSITORY_OWNER: ${{ github.repository_owner }}
         run: .github/scripts/esperar-deploy-infra-hub-api.sh "$REPOSITORY_OWNER" "$DISPATCH_TIME"
 

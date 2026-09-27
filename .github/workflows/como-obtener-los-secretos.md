@@ -24,7 +24,7 @@ de borrado, no alcanza con "Read & Write".
 3. Copiá el token apenas se muestre — solo se ve una vez.
 4. Guardalo como `DOCKERHUB_TOKEN`.
 
-## INFRA_HUB_DISPATCH_TOKEN
+## INFRA_HUB_API_DISPATCH_TOKEN
 
 Lo usa `gh workflow run` (como `GH_TOKEN`) para disparar el workflow de
 deploy en `deploy-hub-api` y después consultar el estado de esa corrida — ver
@@ -40,7 +40,7 @@ deploy en `deploy-hub-api` y después consultar el estado de esa corrida — ver
      el estado de la corrida).
    - `Contents`: Read-only (para resolver el ref).
 5. Generá el token y copialo apenas se muestre.
-6. Guardalo como `INFRA_HUB_DISPATCH_TOKEN` en **este** repo (no en
+6. Guardalo como `INFRA_HUB_API_DISPATCH_TOKEN` en **este** repo (no en
    `deploy-hub-api`).
 
 > Si el dispatch falla con `HTTP 403: Resource not accessible by personal
