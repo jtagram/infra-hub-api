@@ -53,6 +53,14 @@ export class EnvironmentVariables {
   @IsString()
   @IsNotEmpty()
   DB_NAME!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  IAM_API_URL!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  INFRA_HUB_API_APPLICATION_NAME!: string;
 }
 
 export function validate(

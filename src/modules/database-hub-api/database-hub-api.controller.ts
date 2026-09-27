@@ -1,5 +1,7 @@
 import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { OperationResult } from '../../common/dto/operation-result.dto';
+import { Roles } from '../../common/guards/roles.decorator';
+import { Role } from '../../common/roles/role.enum';
 import { DatabaseHubApiService } from './database-hub-api.service';
 import {
   CreateDatabaseDto,
@@ -14,6 +16,7 @@ export class DatabaseHubApiController {
   ) {}
 
   @Get('list-databases')
+  @Roles(Role.ADMIN)
   async listDatabases(
     @Query() dto: ListDatabasesDto,
   ): Promise<{ databases: string[] }> {
@@ -22,6 +25,7 @@ export class DatabaseHubApiController {
   }
 
   @Post('manage-database')
+  @Roles(Role.ADMIN)
   async manageDatabase(
     @Body() dto: ManageDatabaseDto,
   ): Promise<OperationResult> {
@@ -29,6 +33,7 @@ export class DatabaseHubApiController {
   }
 
   @Post('create-database')
+  @Roles(Role.ADMIN)
   async createDatabase(
     @Body() dto: CreateDatabaseDto,
   ): Promise<OperationResult> {

@@ -16,6 +16,8 @@ proceso no arranca):
 - `DB_USERNAME`
 - `DB_PASSWORD`
 - `DB_NAME`
+- `IAM_API_URL`
+- `INFRA_HUB_API_APPLICATION_NAME`
 
 ## Cómo obtener cada una
 
@@ -38,7 +40,19 @@ Nivel de log de Pino: `trace`, `debug`, `info`, `warn`, `error` o `fatal`.
 
 Datos de conexión a la base de datos propia de `infra-hub-api`. Las
 credenciales salen del Secret `postgres-credentials` (ver
-`wiki-hub/microk8s/microk8s.secrets.md` y
-`wiki-hub/infra-hub-api/README.md`); host y puerto son los del Service de
-PostgreSQL dentro del namespace del cluster, y el nombre es el de la base
-creada específicamente para `infra-hub-api`.
+`wiki-hub/microk8s/microk8s.secrets.md`); host y puerto son los del Service
+de PostgreSQL dentro del namespace del cluster, y el nombre es el de la
+base creada específicamente para `infra-hub-api`.
+
+### `IAM_API_URL`
+
+URL desde la que `infra-hub-api` alcanza a `iam-api`, usada para pedirle por
+HTTP (`GET /auth/public-key`) la clave pública RSA con la que se validan los
+tokens que emite `iam-api`.
+
+### `INFRA_HUB_API_APPLICATION_NAME`
+
+Nombre exacto (columna `name`) de la aplicación "infra-hub-api" tal como está
+registrada en la base de datos de `iam-api` (tabla `apps_applications`). Lo
+usa `RolesGuard` para verificar que el token recibido fue emitido para esta
+aplicación.

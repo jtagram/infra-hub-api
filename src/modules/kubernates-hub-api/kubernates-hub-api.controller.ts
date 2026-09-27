@@ -1,5 +1,7 @@
 import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { OperationResult } from '../../common/dto/operation-result.dto';
+import { Roles } from '../../common/guards/roles.decorator';
+import { Role } from '../../common/roles/role.enum';
 import { KubernetesHubApiService } from './kubernates-hub-api.service';
 import {
   ExecuteKubectlCommandDto,
@@ -14,6 +16,7 @@ export class KubernetesHubApiController {
   ) {}
 
   @Get('list-deployments')
+  @Roles(Role.ADMIN)
   async listDeployments(
     @Query() dto: ListDeploymentsDto,
   ): Promise<{ deployments: string[] }> {
@@ -22,6 +25,7 @@ export class KubernetesHubApiController {
   }
 
   @Post('manage-manifest')
+  @Roles(Role.ADMIN)
   async manageKubernatesManifest(
     @Body() dto: ManageKubernetesDto,
   ): Promise<OperationResult> {
@@ -29,6 +33,7 @@ export class KubernetesHubApiController {
   }
 
   @Post('execute-kubectl')
+  @Roles(Role.ADMIN)
   async executeKubectlCommand(
     @Body() dto: ExecuteKubectlCommandDto,
   ): Promise<OperationResult> {
