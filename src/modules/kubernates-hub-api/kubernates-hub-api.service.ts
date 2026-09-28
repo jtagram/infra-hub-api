@@ -53,9 +53,13 @@ export class KubernetesHubApiService {
     const playbook = buildListDeploymentsPlaybook(dto.namespace);
     const result = await this.ansibleService.execute(playbook);
 
-    const deploymentNames = result.success
-      ? extractAnsibleDebugMessage(result.stdout)
-      : null;
+    if (!result.success) {
+      throw new BadGatewayException(
+        `${LIST_DEPLOYMENTS_FAILED_MESSAGE}: ${result.stderr || result.errorMessage || 'unknown error'}`,
+      );
+    }
+
+    const deploymentNames = extractAnsibleDebugMessage(result.stdout);
     if (deploymentNames === null) {
       throw new BadGatewayException(LIST_DEPLOYMENTS_FAILED_MESSAGE);
     }

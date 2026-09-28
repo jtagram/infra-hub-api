@@ -34,9 +34,13 @@ export class DatabaseHubApiService {
     const playbook = buildListDatabasesPlaybook(dto.namespace, dto.deployment);
     const result = await this.ansibleService.execute(playbook);
 
-    const databaseNames = result.success
-      ? extractAnsibleDebugMessage(result.stdout)
-      : null;
+    if (!result.success) {
+      throw new BadGatewayException(
+        `${LIST_DATABASES_FAILED_MESSAGE}: ${result.stderr || result.errorMessage || 'unknown error'}`,
+      );
+    }
+
+    const databaseNames = extractAnsibleDebugMessage(result.stdout);
     if (databaseNames === null) {
       throw new BadGatewayException(LIST_DATABASES_FAILED_MESSAGE);
     }
