@@ -1,5 +1,9 @@
 import { dump } from 'js-yaml';
 
+// pcbox has no standalone `kubectl` binary — only the one bundled with the
+// microk8s snap, invoked as `microk8s kubectl`.
+const KUBECTL = ['microk8s', 'kubectl'];
+
 export enum KubernetesAction {
   APPLY = 'apply',
   DELETE = 'delete',
@@ -46,7 +50,7 @@ export function buildKubernetesManifestPlaybook(
         {
           name: `kubectl ${input.action} manifest`,
           'ansible.builtin.command': {
-            argv: ['kubectl', input.action, '-n', input.namespace, '-f', '-'],
+            argv: [...KUBECTL, input.action, '-n', input.namespace, '-f', '-'],
             stdin: input.manifest,
           },
         },
@@ -67,7 +71,7 @@ export function buildListDeploymentsPlaybook(namespace: string): string {
           name: 'List deployments in namespace',
           'ansible.builtin.command': {
             argv: [
-              'kubectl',
+              ...KUBECTL,
               'get',
               'deployments',
               '-n',
@@ -112,7 +116,7 @@ export function buildKubectlCommandPlaybook(
         {
           name: 'run kubectl command',
           'ansible.builtin.command': {
-            argv: ['kubectl', ...input.kubectlCommand.trim().split(/\s+/)],
+            argv: [...KUBECTL, ...input.kubectlCommand.trim().split(/\s+/)],
           },
         },
       ],

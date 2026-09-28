@@ -1,5 +1,9 @@
 import { dump } from 'js-yaml';
 
+// pcbox has no standalone `kubectl` binary — only the one bundled with the
+// microk8s snap, invoked as `microk8s kubectl`.
+const KUBECTL = ['microk8s', 'kubectl'];
+
 const POSTGRES_SUPERUSER = 'postgres';
 const POSTGRES_ADMIN_DATABASE = 'postgres';
 
@@ -50,7 +54,7 @@ export function buildPostgresSqlPlaybook(
           name: 'Execute SQL against target database',
           'ansible.builtin.command': {
             argv: [
-              'kubectl',
+              ...KUBECTL,
               'exec',
               `deploy/${input.deployment}`,
               '-n',
@@ -89,7 +93,7 @@ export function buildCreateDatabasePlaybook(
           name: 'Create database',
           'ansible.builtin.command': {
             argv: [
-              'kubectl',
+              ...KUBECTL,
               'exec',
               `deploy/${deployment}`,
               '-n',
@@ -130,7 +134,7 @@ export function buildListDatabasesPlaybook(
           name: 'List databases in target deployment',
           'ansible.builtin.command': {
             argv: [
-              'kubectl',
+              ...KUBECTL,
               'exec',
               `deploy/${deployment}`,
               '-n',
