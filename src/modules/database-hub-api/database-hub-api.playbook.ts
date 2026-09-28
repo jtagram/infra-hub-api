@@ -4,7 +4,10 @@ import { dump } from 'js-yaml';
 // microk8s snap, invoked as `microk8s kubectl`.
 const KUBECTL = ['microk8s', 'kubectl'];
 
-const POSTGRES_SUPERUSER = 'postgres';
+// Matches the real POSTGRES_USER configured on the "postgres" deployment in
+// the "databases" namespace — confirmed via `kubectl exec ... env`, it is
+// NOT the postgres image's own "postgres" default superuser.
+const POSTGRES_SUPERUSER = 'user-db';
 const POSTGRES_ADMIN_DATABASE = 'postgres';
 
 export class PostgresSqlPlaybookInput {
