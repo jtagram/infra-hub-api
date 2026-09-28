@@ -7,6 +7,6 @@ export class ManageServerDto {
 
   @IsString()
   @IsNotEmpty()
-  @MaxLength(4000)
-  command!: string;
+  @MaxLength(20000)
+  playbook!: string;
 }

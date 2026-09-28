@@ -9,7 +9,6 @@ import {
 import { AnsibleService } from '../ansible/ansible.service';
 import { ManageServerDto } from './server-hub-api.dto';
 import { ServerHubApiMapper } from './server-hub-api.mapper';
-import { buildServerCommandPlaybook } from './server-hub-api.playbook';
 
 @Injectable()
 export class ServerHubApiService {
@@ -20,11 +19,7 @@ export class ServerHubApiService {
   ) {}
 
   async manageServer(dto: ManageServerDto): Promise<OperationResult> {
-    const playbook = buildServerCommandPlaybook(
-      ServerHubApiMapper.toServerCommandPlaybookInput(dto),
-    );
-
-    const result = await this.ansibleService.execute(playbook);
+    const result = await this.ansibleService.execute(dto.playbook);
 
     const log = await this.operationsLogRepository.save(
       ServerHubApiMapper.toOperationsLogEntity(dto, result),
