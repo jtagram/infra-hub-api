@@ -6,7 +6,10 @@ import {
   OperationResult,
   OperationResultBuilder,
 } from '../../common/dto/operation-result.dto';
-import { extractAnsibleDebugMessage } from '../../common/helpers/ansible-output.helper';
+import {
+  extractAnsibleDebugMessage,
+  extractAnsibleFailureDetail,
+} from '../../common/helpers/ansible-output.helper';
 import { AnsibleService } from '../ansible/ansible.service';
 import {
   CreateDatabaseDto,
@@ -35,9 +38,12 @@ export class DatabaseHubApiService {
     const result = await this.ansibleService.execute(playbook);
 
     if (!result.success) {
-      throw new BadGatewayException(
-        `${LIST_DATABASES_FAILED_MESSAGE}: ${result.stderr || result.errorMessage || 'unknown error'}`,
-      );
+      const detail =
+        extractAnsibleFailureDetail(result.stdout) ||
+        result.stderr ||
+        result.errorMessage ||
+        'unknown error';
+      throw new BadGatewayException(`${LIST_DATABASES_FAILED_MESSAGE}: ${detail}`);
     }
 
     const databaseNames = extractAnsibleDebugMessage(result.stdout);
