@@ -147,6 +147,17 @@ export function buildListDatabasesPlaybook(
               LIST_DATABASES_QUERY,
             ],
           },
+          register: 'result',
+        },
+        {
+          // ansible.builtin.command never prints its own stdout to the
+          // console — this debug task is what actually surfaces it so
+          // DatabaseHubApiService.listDatabases can parse it back out of
+          // the ansible-playbook output (see extractAnsibleDebugMessage).
+          name: 'Emit database names',
+          'ansible.builtin.debug': {
+            msg: '{{ result.stdout }}',
+          },
         },
       ],
     },

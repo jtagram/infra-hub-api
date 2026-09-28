@@ -6,6 +6,7 @@ import {
   OperationResult,
   OperationResultBuilder,
 } from '../../common/dto/operation-result.dto';
+import { extractAnsibleDebugMessage } from '../../common/helpers/ansible-output.helper';
 import { AnsibleService } from '../ansible/ansible.service';
 import {
   ExecuteKubectlCommandDto,
@@ -52,11 +53,14 @@ export class KubernetesHubApiService {
     const playbook = buildListDeploymentsPlaybook(dto.namespace);
     const result = await this.ansibleService.execute(playbook);
 
-    if (!result.success) {
+    const deploymentNames = result.success
+      ? extractAnsibleDebugMessage(result.stdout)
+      : null;
+    if (deploymentNames === null) {
       throw new BadGatewayException(LIST_DEPLOYMENTS_FAILED_MESSAGE);
     }
 
-    return result.stdout
+    return deploymentNames
       .trim()
       .split(/\s+/)
       .filter((name) => name.length > 0);

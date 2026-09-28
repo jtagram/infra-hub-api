@@ -6,6 +6,7 @@ import {
   OperationResult,
   OperationResultBuilder,
 } from '../../common/dto/operation-result.dto';
+import { extractAnsibleDebugMessage } from '../../common/helpers/ansible-output.helper';
 import { AnsibleService } from '../ansible/ansible.service';
 import {
   CreateDatabaseDto,
@@ -33,11 +34,14 @@ export class DatabaseHubApiService {
     const playbook = buildListDatabasesPlaybook(dto.namespace, dto.deployment);
     const result = await this.ansibleService.execute(playbook);
 
-    if (!result.success) {
+    const databaseNames = result.success
+      ? extractAnsibleDebugMessage(result.stdout)
+      : null;
+    if (databaseNames === null) {
       throw new BadGatewayException(LIST_DATABASES_FAILED_MESSAGE);
     }
 
-    return result.stdout
+    return databaseNames
       .split('\n')
       .map((line) => line.trim())
       .filter((line) => line.length > 0);

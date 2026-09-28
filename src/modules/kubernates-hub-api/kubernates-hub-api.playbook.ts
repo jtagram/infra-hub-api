@@ -80,6 +80,17 @@ export function buildListDeploymentsPlaybook(namespace: string): string {
               'jsonpath={.items[*].metadata.name}',
             ],
           },
+          register: 'result',
+        },
+        {
+          // ansible.builtin.command never prints its own stdout to the
+          // console — this debug task is what actually surfaces it so
+          // KubernetesHubApiService.listDeployments can parse it back out
+          // of the ansible-playbook output (see extractAnsibleDebugMessage).
+          name: 'Emit deployment names',
+          'ansible.builtin.debug': {
+            msg: '{{ result.stdout }}',
+          },
         },
       ],
     },
