@@ -38,8 +38,27 @@ jobs:
     needs: build-and-push
     runs-on: ubuntu-latest
     steps:
-      - name: Habilitar workflow_dispatch en deploy-hub-api para desplegar infra-hub-api en local.
+      - name: Clonar la rama local de deploy-hub-api.
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/deploy-hub-api
+          ref: local
+          token: ${{ secrets.INFRA_HUB_API_DISPATCH_TOKEN }}
+          path: deploy-hub-api
+
+      - name: Registrar el deploy de infra-hub-api en deploy-hub-api para disparar su workflow local.
         env:
-          GH_TOKEN: ${{ secrets.INFRA_HUB_API_DISPATCH_TOKEN }}
-          REPOSITORY_OWNER: ${{ github.repository_owner }}
-        run: gh workflow run deploy-infra-hub-api-local.yml --repo "$REPOSITORY_OWNER/deploy-hub-api" --ref local
+          SOURCE_SHA: ${{ github.sha }}
+        working-directory: deploy-hub-api
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          mkdir -p .github/local-triggers
+          echo "$SOURCE_SHA $(date -u +%Y-%m-%dT%H:%M:%SZ)" > .github/local-triggers/infra-hub-api
+          git add .github/local-triggers/infra-hub-api
+          git commit -m "chore: trigger local deploy of infra-hub-api"
+          for attempt in 1 2 3 4 5; do
+            git push origin local && exit 0
+            git pull --rebase origin local
+          done
+          exit 1
