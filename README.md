@@ -47,8 +47,9 @@ base creada específicamente para `infra-hub-api`.
 ### `IAM_API_URL`
 
 URL desde la que `infra-hub-api` alcanza a `iam-api`, usada para pedirle por
-HTTP (`GET /auth/public-key`) la clave pública RSA con la que se validan los
-tokens que emite `iam-api`.
+HTTP (`GET /.well-known/jwks.json`, formato JWKS) las claves públicas RSA con
+las que se validan los tokens que emite `iam-api`, elegidas por el `kid` de
+cada token.
 
 ### `INFRA_HUB_API_APPLICATION_NAME`
 

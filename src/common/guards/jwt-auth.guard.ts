@@ -37,7 +37,11 @@ export class JwtAuthGuard implements CanActivate {
       throw new UnauthorizedException(MISSING_TOKEN_MESSAGE);
     }
 
-    const publicKey = this.jwtPublicKeyService.getCurrentPublicKey();
+    const publicKey = await this.findPublicKey(token);
+    if (!publicKey) {
+      throw new UnauthorizedException(INVALID_TOKEN_MESSAGE);
+    }
+
     const payload = await verifyToken(this.jwtService, token, publicKey);
     if (!payload) {
       throw new UnauthorizedException(INVALID_TOKEN_MESSAGE);
@@ -45,6 +49,14 @@ export class JwtAuthGuard implements CanActivate {
 
     (request as Request & { user: AuthenticatedUser }).user = payload;
     return true;
+  }
+
+  private async findPublicKey(token: string): Promise<string | undefined> {
+    const decoded = this.jwtService.decode<{
+      header?: { kid?: string };
+    } | null>(token, { complete: true });
+    const kid = decoded?.header?.kid;
+    return kid ? this.jwtPublicKeyService.getPublicKey(kid) : undefined;
   }
 }
 
