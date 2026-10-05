@@ -1,0 +1,45 @@
+name: Desplegar infra-hub-api en local (directo, sin validaciones)
+
+on:
+  push:
+    branches:
+      - local
+
+concurrency:
+  group: release-infra-hub-api-local
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-push:
+    name: Compilar y publicar la imagen infra-hub-api con el tag local.
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clonar el repositorio para acceder al código.
+        uses: actions/checkout@v4
+
+      - name: Iniciar sesión en Docker Hub.
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Compilar y publicar la imagen infra-hub-api en Docker Hub.
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/infra-hub-api:local
+
+  deploy:
+    name: Disparar el deploy de infra-hub-api en deploy-hub-api.
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Habilitar workflow_dispatch en deploy-hub-api para desplegar infra-hub-api en local.
+        env:
+          GH_TOKEN: ${{ secrets.INFRA_HUB_API_DISPATCH_TOKEN }}
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
+        run: gh workflow run deploy-infra-hub-api-local.yml --repo "$REPOSITORY_OWNER/deploy-hub-api" --ref local
