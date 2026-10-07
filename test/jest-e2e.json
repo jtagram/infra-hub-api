@@ -3,7 +3,24 @@
   "rootDir": ".",
   "testEnvironment": "node",
   "testRegex": ".e2e-spec.ts$",
+  "testPathIgnorePatterns": ["/node_modules/"],
+  "extensionsToTreatAsEsm": [".ts"],
   "transform": {
-    "^.+\\.(t|j)s$": "ts-jest"
+    "^.+\\.(t|j)s$": [
+      "ts-jest",
+      {
+        "useESM": true,
+        "tsconfig": {
+          "module": "esnext",
+          "moduleResolution": "bundler",
+          "target": "ES2023",
+          "emitDecoratorMetadata": true,
+          "experimentalDecorators": true,
+          "esModuleInterop": true,
+          "isolatedModules": true,
+          "skipLibCheck": true
+        }
+      }
+    ]
   }
 }
