@@ -1,5 +1,5 @@
 
-name: Lanzamiento de infra-hub-api
+name: Lanzamiento de infra-hub-api (dev)
 
 on:
   workflow_dispatch:
@@ -14,7 +14,7 @@ on:
         type: string
 
 concurrency:
-  group: release-infra-hub-api
+  group: release-infra-hub-api-dev
   cancel-in-progress: false
 
 permissions:
@@ -24,7 +24,7 @@ jobs:
   validate:
     name: Validar secrets y tags antes de que se ejecute cualquier otra cosa.
     runs-on: ubuntu-latest
-    environment: prod
+    environment: dev
     steps:
       - name: Clonar el repositorio para acceder al código, los scripts y los tags.
         uses: actions/checkout@v4
@@ -108,7 +108,7 @@ jobs:
     name: Compilar y publicar la imagen infra-hub-api, y crear el tag de git.
     needs: validate
     runs-on: ubuntu-latest
-    environment: prod
+    environment: dev
     permissions:
       contents: write
     steps:
@@ -140,19 +140,19 @@ jobs:
     name: "Aprobar: puerta de aprobación manual antes de desplegar infra-hub-api."
     needs: build-and-push
     runs-on: ubuntu-latest
-    environment: production-approver
+    environment: development-approver
     steps:
       - name: Publicar un aviso de que la aprobación fue otorgada.
         run: |
-          echo "::notice title=Aprobación otorgada::Este job no usa secrets, solo espera la aprobación de production-approver antes de disparar el deploy."
+          echo "::notice title=Aprobación otorgada::Este job no usa secrets, solo espera la aprobación de development-approver antes de disparar el deploy."
 
   dispatch:
     name: "Desplegar: para que deploy-hub-api despliegue infra-hub-api en microk8s."
     needs: gate
     runs-on: ubuntu-latest
     environment:
-      name: prod
-      url: https://github.com/${{ github.repository_owner }}/deploy-hub-api/actions/workflows/deploy-infra-hub-api.yml
+      name: dev
+      url: https://github.com/${{ github.repository_owner }}/deploy-hub-api/actions/workflows/deploy-infra-hub-api-dev.yml
     steps:
       - name: Clonar el repositorio para acceder al código y los scripts.
         uses: actions/checkout@v4
@@ -165,32 +165,32 @@ jobs:
           GH_TOKEN: ${{ secrets.INFRA_HUB_API_DISPATCH_TOKEN }}
           REPOSITORY_OWNER: ${{ github.repository_owner }}
           IMAGE_TAG: ${{ inputs.new_tag }}
-        run: .github/scripts/disparar-deploy-infra-hub-api.sh "$REPOSITORY_OWNER" "$IMAGE_TAG"
+        run: .github/scripts/disparar-deploy-infra-hub-api.sh "$REPOSITORY_OWNER" "$IMAGE_TAG" deploy-infra-hub-api-dev.yml
 
       - name: Publicar un aviso de que este job ahora depende de la ejecución de deploy de infra-hub.
         env:
           REPOSITORY_OWNER: ${{ github.repository_owner }}
         run: |
-          echo "::notice title=Este paso depende de deploy-hub-api::El deploy real corre en otro workflow, no acá. Seguilo en vivo y confirmá que termine bien: https://github.com/$REPOSITORY_OWNER/deploy-hub-api/actions/workflows/deploy-infra-hub-api.yml"
+          echo "::notice title=Este paso depende de deploy-hub-api::El deploy real corre en otro workflow, no acá. Seguilo en vivo y confirmá que termine bien: https://github.com/$REPOSITORY_OWNER/deploy-hub-api/actions/workflows/deploy-infra-hub-api-dev.yml"
 
       - name: Escribir el link del deploy de infra-hub-api en GITHUB_STEP_SUMMARY.
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           IMAGE_TAG: ${{ inputs.new_tag }}
           REPOSITORY_OWNER: ${{ github.repository_owner }}
-        run: .github/scripts/renderizar-resumen-deploy-infra-hub-api.sh "$DOCKERHUB_USERNAME" "$IMAGE_TAG" "$REPOSITORY_OWNER" >> "$GITHUB_STEP_SUMMARY"
+        run: .github/scripts/renderizar-resumen-deploy-infra-hub-api.sh "$DOCKERHUB_USERNAME" "$IMAGE_TAG" "$REPOSITORY_OWNER" deploy-infra-hub-api-dev.yml >> "$GITHUB_STEP_SUMMARY"
 
       - name: Esperar a que finalice la ejecución de deploy disparada en infra-hub.
         env:
           GH_TOKEN: ${{ secrets.INFRA_HUB_API_DISPATCH_TOKEN }}
           REPOSITORY_OWNER: ${{ github.repository_owner }}
-        run: .github/scripts/esperar-deploy-infra-hub-api.sh "$REPOSITORY_OWNER" "$DISPATCH_TIME"
+        run: .github/scripts/esperar-deploy-infra-hub-api.sh "$REPOSITORY_OWNER" "$DISPATCH_TIME" deploy-infra-hub-api-dev.yml
 
   cleanup-tags:
     name: Eliminar todos los tags de infra-hub-api en Docker Hub excepto los dos tags conservados.
     needs: dispatch
     runs-on: ubuntu-latest
-    environment: prod
+    environment: dev
     steps:
       - name: Clonar el repositorio para acceder al código y los scripts.
         uses: actions/checkout@v4

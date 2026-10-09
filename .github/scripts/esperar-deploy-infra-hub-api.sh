@@ -3,6 +3,7 @@ set -euo pipefail
 
 REPOSITORY_OWNER="${1-}"
 SINCE_TIMESTAMP="${2-}"
+WORKFLOW="${3:-deploy-infra-hub-api.yml}"
 
 if [ -z "$REPOSITORY_OWNER" ] || [ -z "$SINCE_TIMESTAMP" ]; then
   echo "esperar-deploy-infra-hub-api: se esperaban <repository-owner> <since-timestamp-utc>" >&2
@@ -10,7 +11,6 @@ if [ -z "$REPOSITORY_OWNER" ] || [ -z "$SINCE_TIMESTAMP" ]; then
 fi
 
 REPO="$REPOSITORY_OWNER/deploy-hub-api"
-WORKFLOW="deploy-infra-hub-api.yml"
 MAX_INTENTOS="${ESPERAR_DEPLOY_INFRA_HUB_API_MAX_INTENTOS:-12}"
 SEGUNDOS_ESPERA="${ESPERAR_DEPLOY_INFRA_HUB_API_SEGUNDOS_ESPERA:-5}"
 

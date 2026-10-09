@@ -16,6 +16,7 @@ jobs:
   build-and-push:
     name: Compilar y publicar la imagen infra-hub-api con el tag local.
     runs-on: ubuntu-latest
+    environment: local
     steps:
       - name: Clonar el repositorio para acceder al código.
         uses: actions/checkout@v4
@@ -37,6 +38,7 @@ jobs:
     name: Disparar el deploy de infra-hub-api en deploy-hub-api.
     needs: build-and-push
     runs-on: ubuntu-latest
+    environment: local
     steps:
       - name: Clonar la rama local de deploy-hub-api.
         uses: actions/checkout@v4
