@@ -16,8 +16,8 @@ if [ -z "$TRIMMED_VALUE" ]; then
   exit 1
 fi
 
-if [[ ! "$TAG_VALUE" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-  echo "validar-formato-de-tag: el tag $TAG_NAME (\"$TAG_VALUE\") no tiene el formato esperado vNUMERO.NUMERO.NUMERO (ejemplo: v0.9.10)" >&2
+if [[ ! "$TAG_VALUE" =~ ^(dev-|prod-)?v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  echo "validar-formato-de-tag: el tag $TAG_NAME (\"$TAG_VALUE\") no tiene el formato esperado [dev-|prod-]vNUMERO.NUMERO.NUMERO (ejemplos: v0.9.10, dev-v0.1.1, prod-v0.1.1)" >&2
   exit 1
 fi
 
