@@ -27,6 +27,11 @@ import {
   wrongKeyAdminAuthorizationHeader,
 } from '../helpers/test-auth';
 
+const PSQL_AS_POSTGRES_USER_SCRIPT =
+  'if [ -z "$POSTGRES_USER" ]; then ' +
+  'echo "POSTGRES_USER is not set in this deployment" >&2; exit 1; fi; ' +
+  'exec psql -U "$POSTGRES_USER" "$@"';
+
 const ENDPOINT = '/database-hub-api/list-databases';
 const LIST_QUERY =
   'SELECT datname FROM pg_database WHERE datistemplate = false;';
@@ -48,9 +53,10 @@ function expectedPlaybook(namespace: string, deployment: string) {
               '-n',
               namespace,
               '--',
-              'psql',
-              '-U',
-              'user-db',
+              'sh',
+              '-c',
+              PSQL_AS_POSTGRES_USER_SCRIPT,
+              'sh',
               '-tAc',
               LIST_QUERY,
             ],

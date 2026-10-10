@@ -5,6 +5,11 @@ import {
   PostgresSqlPlaybookInputBuilder,
 } from '../../database-hub-api.playbook';
 
+const PSQL_AS_POSTGRES_USER_SCRIPT =
+  'if [ -z "$POSTGRES_USER" ]; then ' +
+  'echo "POSTGRES_USER is not set in this deployment" >&2; exit 1; fi; ' +
+  'exec psql -U "$POSTGRES_USER" "$@"';
+
 const build = (sqlCode: string, overrides: Record<string, string> = {}) =>
   buildPostgresSqlPlaybook(
     new PostgresSqlPlaybookInputBuilder()
@@ -45,9 +50,10 @@ describe('buildPostgresSqlPlaybook', () => {
       '-n',
       'databases',
       '--',
-      'psql',
-      '-U',
-      'user-db',
+      'sh',
+      '-c',
+      PSQL_AS_POSTGRES_USER_SCRIPT,
+      'sh',
       '-d',
       'app',
       '-v',
@@ -70,7 +76,7 @@ describe('buildPostgresSqlPlaybook', () => {
 
     const argv = parsePlay(build(sql)).tasks[0]['ansible.builtin.command'].argv;
 
-    expect(argv).toHaveLength(16);
+    expect(argv).toHaveLength(17);
     expect(argv[argv.length - 1]).toBe(sql);
   });
 
@@ -83,10 +89,10 @@ describe('buildPostgresSqlPlaybook', () => {
       }),
     ).tasks[0]['ansible.builtin.command'].argv;
 
-    expect(argv).toHaveLength(16);
+    expect(argv).toHaveLength(17);
     expect(argv[3]).toBe('deploy/dep: x');
     expect(argv[5]).toBe('ns\n- injected');
-    expect(argv[11]).toBe('--help ; rm -rf /');
+    expect(argv[12]).toBe('--help ; rm -rf /');
   });
 
   it('keeps the whole SQL as the -c value even when it looks like another option', () => {
@@ -106,12 +112,18 @@ describe('buildPostgresSqlPlaybook', () => {
     expect(argv[argv.length - 1]).toBe(sql);
   });
 
-  it('always logs in as the fixed "user-db" superuser', () => {
+  it('resolves the superuser from the deployment POSTGRES_USER, never a fixed name', () => {
     const argv = parsePlay(build('SELECT 1;')).tasks[0][
       'ansible.builtin.command'
     ].argv;
 
-    expect(argv[argv.indexOf('-U') + 1]).toBe('user-db');
+    expect(argv).not.toContain('user-db');
+    expect(argv.slice(argv.indexOf('--') + 1, argv.indexOf('--') + 5)).toEqual([
+      'sh',
+      '-c',
+      PSQL_AS_POSTGRES_USER_SCRIPT,
+      'sh',
+    ]);
   });
 
   it('stops on the first SQL error with ON_ERROR_STOP', () => {

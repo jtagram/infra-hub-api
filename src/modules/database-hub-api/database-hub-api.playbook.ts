@@ -4,11 +4,21 @@ import { dump } from 'js-yaml';
 // microk8s snap, invoked as `microk8s kubectl`.
 const KUBECTL = ['microk8s', 'kubectl'];
 
-// Matches the real POSTGRES_USER configured on the "postgres" deployment in
-// the "databases" namespace — confirmed via `kubectl exec ... env`, it is
-// NOT the postgres image's own "postgres" default superuser.
-const POSTGRES_SUPERUSER = 'user-db';
 const POSTGRES_ADMIN_DATABASE = 'postgres';
+
+// The superuser is whatever POSTGRES_USER the targeted deployment's own
+// container defines, so it is resolved inside that container (where it is
+// already in the environment, even when it comes from a secretKeyRef) instead
+// of being hardcoded per environment. Every psql argument travels as a
+// positional parameter ("$@"), never interpolated into the script.
+const PSQL_AS_POSTGRES_USER_SCRIPT =
+  'if [ -z "$POSTGRES_USER" ]; then ' +
+  'echo "POSTGRES_USER is not set in this deployment" >&2; exit 1; fi; ' +
+  'exec psql -U "$POSTGRES_USER" "$@"';
+
+function psqlAsPostgresUser(...psqlArgs: string[]): string[] {
+  return ['sh', '-c', PSQL_AS_POSTGRES_USER_SCRIPT, 'sh', ...psqlArgs];
+}
 
 export class PostgresSqlPlaybookInput {
   namespace!: string;
@@ -63,15 +73,14 @@ export function buildPostgresSqlPlaybook(
               '-n',
               input.namespace,
               '--',
-              'psql',
-              '-U',
-              POSTGRES_SUPERUSER,
-              '-d',
-              input.dbName,
-              '-v',
-              'ON_ERROR_STOP=1',
-              '-c',
-              input.sqlCode,
+              ...psqlAsPostgresUser(
+                '-d',
+                input.dbName,
+                '-v',
+                'ON_ERROR_STOP=1',
+                '-c',
+                input.sqlCode,
+              ),
             ],
           },
         },
@@ -102,15 +111,14 @@ export function buildCreateDatabasePlaybook(
               '-n',
               namespace,
               '--',
-              'psql',
-              '-U',
-              POSTGRES_SUPERUSER,
-              '-d',
-              POSTGRES_ADMIN_DATABASE,
-              '-v',
-              'ON_ERROR_STOP=1',
-              '-c',
-              `CREATE DATABASE "${dbName}";`,
+              ...psqlAsPostgresUser(
+                '-d',
+                POSTGRES_ADMIN_DATABASE,
+                '-v',
+                'ON_ERROR_STOP=1',
+                '-c',
+                `CREATE DATABASE "${dbName}";`,
+              ),
             ],
           },
         },
@@ -143,11 +151,7 @@ export function buildListDatabasesPlaybook(
               '-n',
               namespace,
               '--',
-              'psql',
-              '-U',
-              POSTGRES_SUPERUSER,
-              '-tAc',
-              LIST_DATABASES_QUERY,
+              ...psqlAsPostgresUser('-tAc', LIST_DATABASES_QUERY),
             ],
           },
           register: 'result',

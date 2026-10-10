@@ -2,6 +2,11 @@ import { describe, expect, it } from '@jest/globals';
 import { load } from 'js-yaml';
 import { buildCreateDatabasePlaybook } from '../../database-hub-api.playbook';
 
+const PSQL_AS_POSTGRES_USER_SCRIPT =
+  'if [ -z "$POSTGRES_USER" ]; then ' +
+  'echo "POSTGRES_USER is not set in this deployment" >&2; exit 1; fi; ' +
+  'exec psql -U "$POSTGRES_USER" "$@"';
+
 type Play = {
   hosts: string;
   gather_facts: boolean;
@@ -35,9 +40,10 @@ describe('buildCreateDatabasePlaybook', () => {
       '-n',
       'databases',
       '--',
-      'psql',
-      '-U',
-      'user-db',
+      'sh',
+      '-c',
+      PSQL_AS_POSTGRES_USER_SCRIPT,
+      'sh',
       '-d',
       'postgres',
       '-v',
@@ -69,7 +75,7 @@ describe('buildCreateDatabasePlaybook', () => {
       buildCreateDatabasePlaybook('ns; id', 'dep && id', 'db'),
     ).tasks[0]['ansible.builtin.command'].argv;
 
-    expect(argv).toHaveLength(16);
+    expect(argv).toHaveLength(17);
     expect(argv[3]).toBe('deploy/dep && id');
     expect(argv[5]).toBe('ns; id');
   });

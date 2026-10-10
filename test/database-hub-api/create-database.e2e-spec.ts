@@ -32,6 +32,11 @@ import {
   wrongKeyAdminAuthorizationHeader,
 } from '../helpers/test-auth';
 
+const PSQL_AS_POSTGRES_USER_SCRIPT =
+  'if [ -z "$POSTGRES_USER" ]; then ' +
+  'echo "POSTGRES_USER is not set in this deployment" >&2; exit 1; fi; ' +
+  'exec psql -U "$POSTGRES_USER" "$@"';
+
 const ENDPOINT = '/database-hub-api/create-database';
 const NAME_MESSAGE = 'dbName must be a valid lowercase Postgres identifier';
 
@@ -66,9 +71,10 @@ function expectedPlaybook(
               '-n',
               namespace,
               '--',
-              'psql',
-              '-U',
-              'user-db',
+              'sh',
+              '-c',
+              PSQL_AS_POSTGRES_USER_SCRIPT,
+              'sh',
               '-d',
               'postgres',
               '-v',

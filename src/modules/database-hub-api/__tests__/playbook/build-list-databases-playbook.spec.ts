@@ -2,6 +2,11 @@ import { describe, expect, it } from '@jest/globals';
 import { load } from 'js-yaml';
 import { buildListDatabasesPlaybook } from '../../database-hub-api.playbook';
 
+const PSQL_AS_POSTGRES_USER_SCRIPT =
+  'if [ -z "$POSTGRES_USER" ]; then ' +
+  'echo "POSTGRES_USER is not set in this deployment" >&2; exit 1; fi; ' +
+  'exec psql -U "$POSTGRES_USER" "$@"';
+
 type Task = Record<string, unknown> & { name: string };
 type Play = { hosts: string; gather_facts: boolean; tasks: Task[] };
 const parsePlay = (yaml: string): Play => (load(yaml) as Play[])[0];
@@ -33,9 +38,10 @@ describe('buildListDatabasesPlaybook', () => {
         '-n',
         'databases',
         '--',
-        'psql',
-        '-U',
-        'user-db',
+        'sh',
+        '-c',
+        PSQL_AS_POSTGRES_USER_SCRIPT,
+        'sh',
         '-tAc',
         'SELECT datname FROM pg_database WHERE datistemplate = false;',
       ],
@@ -64,7 +70,7 @@ describe('buildListDatabasesPlaybook', () => {
     ).tasks;
     const argv = (query['ansible.builtin.command'] as { argv: string[] }).argv;
 
-    expect(argv).toHaveLength(12);
+    expect(argv).toHaveLength(13);
     expect(argv[3]).toBe('deploy/dep: y');
     expect(argv[5]).toBe('ns\n- x');
   });

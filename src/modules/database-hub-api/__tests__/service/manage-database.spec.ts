@@ -18,6 +18,11 @@ import { AnsibleExecutionResult } from '../../../ansible/ansible.dto';
 import { AnsibleService } from '../../../ansible/ansible.service';
 import { DatabaseHubApiService } from '../../database-hub-api.service';
 
+const PSQL_AS_POSTGRES_USER_SCRIPT =
+  'if [ -z "$POSTGRES_USER" ]; then ' +
+  'echo "POSTGRES_USER is not set in this deployment" >&2; exit 1; fi; ' +
+  'exec psql -U "$POSTGRES_USER" "$@"';
+
 // @nestjs/typeorm and @nestjs/config are ESM-only and Jest runs as CommonJS.
 // The service is built by hand, so the injection decorator can be a no-op.
 jest.mock('@nestjs/typeorm', () => ({
@@ -96,9 +101,10 @@ describe('DatabaseHubApiService.manageDatabase (in-memory db)', () => {
       '-n',
       'databases',
       '--',
-      'psql',
-      '-U',
-      'user-db',
+      'sh',
+      '-c',
+      PSQL_AS_POSTGRES_USER_SCRIPT,
+      'sh',
       '-d',
       'app',
       '-v',

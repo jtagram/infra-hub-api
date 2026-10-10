@@ -32,6 +32,11 @@ import {
   wrongKeyAdminAuthorizationHeader,
 } from '../helpers/test-auth';
 
+const PSQL_AS_POSTGRES_USER_SCRIPT =
+  'if [ -z "$POSTGRES_USER" ]; then ' +
+  'echo "POSTGRES_USER is not set in this deployment" >&2; exit 1; fi; ' +
+  'exec psql -U "$POSTGRES_USER" "$@"';
+
 const ENDPOINT = '/database-hub-api/manage-database';
 
 function validBody(overrides: Record<string, unknown> = {}) {
@@ -67,9 +72,10 @@ function expectedPlaybook(input: {
               '-n',
               input.namespace,
               '--',
-              'psql',
-              '-U',
-              'user-db',
+              'sh',
+              '-c',
+              PSQL_AS_POSTGRES_USER_SCRIPT,
+              'sh',
               '-d',
               input.dbName,
               '-v',
