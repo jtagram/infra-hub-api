@@ -4,7 +4,7 @@ set -euo pipefail
 DOCKERHUB_USERNAME="${1-}"
 IMAGE_TAG="${2-}"
 REPOSITORY_OWNER="${3-}"
-DEPLOY_WORKFLOW="${4:-deploy-infra-hub-api.yml}"
+DEPLOY_WORKFLOW="${4:-deploy-infra-hub-api-prod.yml}"
 
 if [ -z "$DOCKERHUB_USERNAME" ] || [ -z "$IMAGE_TAG" ] || [ -z "$REPOSITORY_OWNER" ]; then
   echo "renderizar-resumen-deploy-infra-hub-api: se esperaban <dockerhub-username> <image-tag> <repository-owner>" >&2
