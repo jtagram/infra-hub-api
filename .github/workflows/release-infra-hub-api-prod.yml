@@ -165,7 +165,7 @@ jobs:
           GH_TOKEN: ${{ secrets.INFRA_HUB_API_DISPATCH_TOKEN }}
           REPOSITORY_OWNER: ${{ github.repository_owner }}
           IMAGE_TAG: ${{ inputs.new_tag }}
-        run: .github/scripts/disparar-deploy-infra-hub-api.sh "$REPOSITORY_OWNER" "$IMAGE_TAG"
+        run: .github/scripts/disparar-deploy-infra-hub-api.sh "$REPOSITORY_OWNER" "$IMAGE_TAG" deploy-infra-hub-api-prod.yml master
 
       - name: Publicar un aviso de que este job ahora depende de la ejecución de deploy de infra-hub.
         env:

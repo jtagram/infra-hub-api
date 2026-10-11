@@ -6,14 +6,17 @@
 # Requiere GH_TOKEN con permiso de Actions sobre el repositorio
 # deploy-hub-api.
 #
-# Uso: disparar-deploy-infra-hub-api.sh <owner> <tag-de-imagen> [workflow-de-deploy]
+# Uso: disparar-deploy-infra-hub-api.sh <owner> <tag-de-imagen> [workflow-de-deploy] [rama-de-deploy-hub-api]
 #   workflow-de-deploy: archivo del workflow en deploy-hub-api (por defecto
 #   deploy-infra-hub-api-prod.yml; el release dev usa deploy-infra-hub-api-dev.yml)
+#   rama-de-deploy-hub-api: rama de deploy-hub-api donde corre el workflow de
+#   deploy (por defecto la rama por defecto del repositorio)
 set -euo pipefail
 
 OWNER="${1-}"
 IMAGE_TAG="${2-}"
 DEPLOY_WORKFLOW="${3:-deploy-infra-hub-api-prod.yml}"
+DEPLOY_REF="${4-}"
 
 if [ -z "$OWNER" ]; then
   echo "disparar-deploy-infra-hub-api: se esperaba el owner del repositorio como primer argumento" >&2
@@ -30,6 +33,13 @@ if [ -z "${GH_TOKEN-}" ]; then
   exit 1
 fi
 
-gh workflow run "$DEPLOY_WORKFLOW" \
-  --repo "$OWNER/deploy-hub-api" \
-  --field image_tag="$IMAGE_TAG"
+if [ -n "$DEPLOY_REF" ]; then
+  gh workflow run "$DEPLOY_WORKFLOW" \
+    --repo "$OWNER/deploy-hub-api" \
+    --ref "$DEPLOY_REF" \
+    --field image_tag="$IMAGE_TAG"
+else
+  gh workflow run "$DEPLOY_WORKFLOW" \
+    --repo "$OWNER/deploy-hub-api" \
+    --field image_tag="$IMAGE_TAG"
+fi
