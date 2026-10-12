@@ -1,0 +1,12 @@
+# Usa comillas simples en lugar de dobles
+singleQuote: true
+
+# Cada nivel de indentación equivale a un ancho de dos columnas
+tabWidth: 2
+
+# Indenta con el carácter tab en lugar de espacios
+useTabs: true
+
+# Largo máximo de línea antes de partirla en varias líneas
+# (así Prettier distribuye en varias líneas lo que no cabe, por ejemplo los parámetros de una función)
+printWidth: 100
