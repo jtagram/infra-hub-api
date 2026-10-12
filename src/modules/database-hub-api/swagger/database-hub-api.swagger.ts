@@ -85,7 +85,7 @@ export const ApiCreateDatabase = () =>
         'Invalid body:',
         '- `numberOfTickets` is not an integer.',
         '- `namespace`, `deployment` or `dbName` (max 63 characters) is missing, empty, not a string or too long.',
-        '- `dbName must be a valid lowercase Postgres identifier`: `dbName` does not match `^[a-z_][a-z0-9_]*$`.',
+        '- `dbName must be a valid lowercase Postgres identifier`: `dbName` does not use only lowercase letters, digits and underscores, or starts with a digit.',
         '- Unknown properties are rejected.',
       ].join('\n'),
     }),
