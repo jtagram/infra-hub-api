@@ -12,6 +12,7 @@ import { JwtPublicKeyModule } from './common/jwt/jwt-public-key.module';
 import { LoggerModule } from './instrument/logger/logger.module';
 import { AnsibleModule } from './modules/ansible/ansible.module';
 import { DatabaseHubApiModule } from './modules/database-hub-api/database-hub-api.module';
+import { HealthModule } from './modules/health/health.module';
 import { KubernetesHubApiModule } from './modules/kubernates-hub-api/kubernates-hub-api.module';
 import { ServerHubApiModule } from './modules/server-hub-api/server-hub-api.module';
 
@@ -25,6 +26,7 @@ const jwtModule = JwtModule.register({});
     DatabaseModule,
     jwtModule,
     JwtPublicKeyModule,
+    HealthModule,
     AnsibleModule,
     DatabaseHubApiModule,
     KubernetesHubApiModule,
