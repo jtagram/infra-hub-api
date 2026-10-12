@@ -8,7 +8,7 @@ export interface RolePayload {
   description: string;
 }
 
-/** The application resolved from `X-Application-Name`, plus the caller's roles on it. */
+/** The application resolved from `X-Origin-Application`, plus the caller's roles on it. */
 export interface ApplicationPayload {
   id: number;
   name: string;

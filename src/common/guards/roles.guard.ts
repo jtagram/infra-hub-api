@@ -20,7 +20,7 @@ const INSUFFICIENT_ROLE_MESSAGE = 'You do not have the required role';
 /**
  * A token is only valid proof of an infra-hub-api role when it was issued for
  * this exact application (`INFRA_HUB_API_APPLICATION_NAME`, matching what
- * ticket-hub-api sends as `x-application-name` when logging in);
+ * ticket-hub-api sends as `x-origin-application` when logging in);
  * otherwise an ADMIN of some unrelated app (e.g. "iam") would satisfy
  * `@Roles(Role.ADMIN)` here too, since role names collide across
  * applications by design.
