@@ -7,7 +7,6 @@ import {
   it,
   jest,
 } from '@jest/globals';
-import { BadGatewayException } from '@nestjs/common';
 import { load } from 'js-yaml';
 import { DataSource, Repository } from 'typeorm';
 import { createInMemoryDataSource } from '../../../../../test/helpers/in-memory-db';
@@ -17,7 +16,6 @@ import {
 } from '../../../../common/database/infrastructure-operatios-log.entity';
 import { AnsibleExecutionResult } from '../../../ansible/ansible.dto';
 import { AnsibleService } from '../../../ansible/ansible.service';
-import { KubernetesAction } from '../../kubernates-hub-api.playbook';
 import { KubernetesHubApiService } from '../../kubernates-hub-api.service';
 
 // @nestjs/typeorm and @nestjs/config are ESM-only and Jest runs as CommonJS.
@@ -41,10 +39,8 @@ const FAILURE: AnsibleExecutionResult = {
   errorMessage: 'failed',
   errorCode: 2,
 };
-const debugOutput = (msg: string) =>
-  `TASK [Emit deployment names]\nok: [pcbox] => {\n    "msg": ${JSON.stringify(msg)}\n}\n`;
 const tasksOf = (playbook: string) =>
-  (load(playbook) as { tasks: Record<string, any>[] }[])[0].tasks;
+  (load(playbook) as { tasks: Record<string, unknown>[] }[])[0].tasks;
 
 describe('KubernetesHubApiService.executeKubectlCommand (in-memory db)', () => {
   let dataSource: DataSource;
@@ -83,7 +79,9 @@ describe('KubernetesHubApiService.executeKubectlCommand (in-memory db)', () => {
     await service.executeKubectlCommand(dto);
 
     const [task] = tasksOf(ansibleService.execute.mock.calls[0][0]);
-    expect(task['ansible.builtin.command'].argv).toEqual([
+    expect(
+      (task['ansible.builtin.command'] as { argv: string[] }).argv,
+    ).toEqual([
       'microk8s',
       'kubectl',
       'get',

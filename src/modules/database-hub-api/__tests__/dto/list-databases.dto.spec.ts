@@ -2,6 +2,7 @@ import { describe, expect, it } from '@jest/globals';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { ListDatabasesDto } from '../../database-hub-api.dto';
+import { omit } from '../../../../../test/helpers/omit';
 
 // Same options main.ts gives the global ValidationPipe (transform only affects
 // the returned instance, not what is accepted).
@@ -21,7 +22,7 @@ describe('ListDatabasesDto', () => {
   });
 
   it('rejects a missing or empty namespace', async () => {
-    const { namespace, ...payload } = valid();
+    const payload = omit(valid(), 'namespace');
 
     expect(await propertiesWithErrors(payload)).toEqual(['namespace']);
     expect(await propertiesWithErrors({ ...valid(), namespace: '' })).toEqual([
@@ -36,7 +37,7 @@ describe('ListDatabasesDto', () => {
   });
 
   it('rejects a missing or empty deployment', async () => {
-    const { deployment, ...payload } = valid();
+    const payload = omit(valid(), 'deployment');
 
     expect(await propertiesWithErrors(payload)).toEqual(['deployment']);
     expect(await propertiesWithErrors({ ...valid(), deployment: '' })).toEqual([

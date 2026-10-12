@@ -15,6 +15,8 @@ import {
   authorizationHeaderFor,
   hs256ConfusionAdminAuthorizationHeader,
 } from './helpers/test-auth';
+import { bodyOf, ErrorBody } from './helpers/response-types';
+import { OperationResult } from '../src/common/dto/operation-result.dto';
 
 // Smoke suite: the REAL AppModule (see helpers/app-test-app.ts for what is
 // stubbed). Per-endpoint behavior is covered by the module-level e2e suites.
@@ -64,7 +66,7 @@ describe('AppModule (e2e smoke)', () => {
       .query({ namespace: 'payments' })
       .expect(401);
 
-    expect(response.body.message).toBe('Missing or malformed bearer token');
+    expect(bodyOf<ErrorBody>(response).message).toBe('Missing or malformed bearer token');
     expect(testApp.process.calls).toEqual([]);
   });
 
@@ -76,7 +78,7 @@ describe('AppModule (e2e smoke)', () => {
       .set('Authorization', hs256ConfusionAdminAuthorizationHeader())
       .expect(401);
 
-    expect(response.body.message).toBe('Invalid or expired token');
+    expect(bodyOf<ErrorBody>(response).message).toBe('Invalid or expired token');
     expect(testApp.process.calls).toEqual([]);
   });
 
@@ -105,7 +107,7 @@ describe('AppModule (e2e smoke)', () => {
       .set('Authorization', ADMIN_AUTHORIZATION)
       .expect(400);
 
-    expect(response.body.message).toEqual(['property extra should not exist']);
+    expect(bodyOf<ErrorBody>(response).message).toEqual(['property extra should not exist']);
     expect(testApp.process.calls).toEqual([]);
   });
 
@@ -138,7 +140,7 @@ describe('AppModule (e2e smoke)', () => {
 
     const rows = await testApp.logRows();
     expect(rows).toHaveLength(1);
-    expect(rows[0].id).toBe(response.body.logId);
+    expect(rows[0].id).toBe(bodyOf<OperationResult>(response).logId);
     expect(rows[0].department).toBe(InfrastructureDepartment.SERVER);
     expect(rows[0].numberOfTicket).toBe(7);
     expect(testApp.process.calls).toHaveLength(1);

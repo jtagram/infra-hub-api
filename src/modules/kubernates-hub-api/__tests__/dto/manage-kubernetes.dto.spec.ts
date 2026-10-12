@@ -2,6 +2,7 @@ import { describe, expect, it } from '@jest/globals';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { ManageKubernetesDto } from '../../kubernates-hub-api.dto';
+import { omit } from '../../../../../test/helpers/omit';
 
 // Same options main.ts gives the global ValidationPipe (transform only affects
 // the returned instance, not what is accepted).
@@ -44,13 +45,13 @@ describe('ManageKubernetesDto', () => {
   });
 
   it('rejects a missing action', async () => {
-    const { action, ...payload } = valid();
+    const payload = omit(valid(), 'action');
 
     expect(await propertiesWithErrors(payload)).toEqual(['action']);
   });
 
   it('rejects a missing numberOfTickets', async () => {
-    const { numberOfTickets, ...payload } = valid();
+    const payload = omit(valid(), 'numberOfTickets');
 
     expect(await propertiesWithErrors(payload)).toEqual(['numberOfTickets']);
   });
@@ -65,7 +66,7 @@ describe('ManageKubernetesDto', () => {
   });
 
   it('rejects a missing or empty namespace', async () => {
-    const { namespace, ...payload } = valid();
+    const payload = omit(valid(), 'namespace');
 
     expect(await propertiesWithErrors(payload)).toEqual(['namespace']);
     expect(await propertiesWithErrors({ ...valid(), namespace: '' })).toEqual([
@@ -89,7 +90,7 @@ describe('ManageKubernetesDto', () => {
   });
 
   it('rejects a missing or empty manifest', async () => {
-    const { manifest, ...payload } = valid();
+    const payload = omit(valid(), 'manifest');
 
     expect(await propertiesWithErrors(payload)).toEqual(['manifest']);
     expect(await propertiesWithErrors({ ...valid(), manifest: '' })).toEqual([

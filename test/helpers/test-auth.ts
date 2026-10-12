@@ -13,8 +13,8 @@ const { publicKey, privateKey } = generateKeyPairSync('rsa', {
 
 /** Stand-in for JwtPublicKeyService: serves the test public key, no HTTP. */
 export const publicKeyServiceStub = {
-  getPublicKey: async (kid: string): Promise<string | undefined> =>
-    kid === TEST_KEY_ID ? publicKey : undefined,
+  getPublicKey: (kid: string): Promise<string | undefined> =>
+    Promise.resolve(kid === TEST_KEY_ID ? publicKey : undefined),
 };
 
 export interface TestUser {

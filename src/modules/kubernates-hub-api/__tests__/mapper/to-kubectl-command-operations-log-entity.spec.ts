@@ -4,23 +4,9 @@ import {
   InfrastructureOperationsLogEntity,
 } from '../../../../common/database/infrastructure-operatios-log.entity';
 import { AnsibleExecutionResult } from '../../../ansible/ansible.dto';
-import {
-  ExecuteKubectlCommandDto,
-  ManageKubernetesDto,
-} from '../../kubernates-hub-api.dto';
+import { ExecuteKubectlCommandDto } from '../../kubernates-hub-api.dto';
 import { KubernetesHubApiMapper } from '../../kubernates-hub-api.mapper';
-import {
-  KubectlCommandPlaybookInput,
-  KubernetesAction,
-  KubernetesManifestPlaybookInput,
-} from '../../kubernates-hub-api.playbook';
 
-const manageDto: ManageKubernetesDto = {
-  numberOfTickets: 14,
-  namespace: 'prod',
-  action: KubernetesAction.DELETE,
-  manifest: 'kind: Pod\nmetadata:\n  name: x',
-};
 const kubectlDto: ExecuteKubectlCommandDto = {
   numberOfTickets: 15,
   kubectlCommand: 'get pods -A',

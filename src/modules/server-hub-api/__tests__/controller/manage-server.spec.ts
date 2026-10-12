@@ -6,6 +6,7 @@ import { Role } from '../../../../common/roles/role.enum';
 import { ServerHubApiController } from '../../server-hub-api.controller';
 import { ManageServerDto } from '../../server-hub-api.dto';
 import { ServerHubApiService } from '../../server-hub-api.service';
+import { prototypeMethod } from '../../../../../test/helpers/prototype-method';
 
 // @nestjs/typeorm and @nestjs/config are ESM-only and Jest runs as CommonJS.
 // The controller is built by hand, so the injection decorator can be a no-op.
@@ -19,7 +20,7 @@ describe('ServerHubApiController.manageServer', () => {
     manageServer: jest.Mock<(dto: ManageServerDto) => Promise<OperationResult>>;
   };
   let controller: ServerHubApiController;
-  const handler = ServerHubApiController.prototype.manageServer;
+  const handler = prototypeMethod(ServerHubApiController.prototype, 'manageServer');
   const dto: ManageServerDto = {
     numberOfTickets: 1,
     playbook: '- hosts: all\n  tasks: []\n',

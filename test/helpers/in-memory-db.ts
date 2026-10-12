@@ -40,11 +40,12 @@ export async function createInMemoryDataSource(
     implementation: () => null,
   });
 
-  const dataSource: DataSource = await db.adapters.createTypeormDataSource({
+  // pg-mem types the adapter result as `any`.
+  const dataSource = (await db.adapters.createTypeormDataSource({
     type: 'postgres',
     entities,
     synchronize: false,
-  });
+  })) as DataSource;
 
   await dataSource.initialize();
   await dataSource.synchronize();

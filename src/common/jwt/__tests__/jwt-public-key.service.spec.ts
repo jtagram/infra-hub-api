@@ -22,12 +22,12 @@ const COOLDOWN_MS = 30 * 1000;
 
 const buildJwk = (kid?: string): JsonWebKey & { kid?: string } => {
   const { publicKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
-  const jwk = publicKey.export({ format: 'jwk' }) as JsonWebKey;
+  const jwk = publicKey.export({ format: 'jwk' });
   return kid === undefined ? jwk : { ...jwk, kid };
 };
 
 const jwksResponse = (body: unknown, ok = true, status = 200) =>
-  ({ ok, status, json: async () => body }) as unknown as Response;
+  ({ ok, status, json: () => Promise.resolve(body) }) as unknown as Response;
 
 describe('JwtPublicKeyService', () => {
   let fetchMock: jest.Mock<
@@ -43,7 +43,7 @@ describe('JwtPublicKeyService', () => {
     jest.spyOn(Date, 'now').mockImplementation(() => now);
     fetchMock =
       jest.fn<(url: string, init?: RequestInit) => Promise<Response>>();
-    jest.spyOn(globalThis, 'fetch').mockImplementation(fetchMock as never);
+    jest.spyOn(globalThis, 'fetch').mockImplementation(fetchMock);
     logger = { error: jest.fn() };
     configService = { get: jest.fn().mockReturnValue(IAM_API_URL) };
     service = new JwtPublicKeyService(
@@ -153,9 +153,7 @@ describe('JwtPublicKeyService', () => {
       fetchMock.mockResolvedValue({
         ok: true,
         status: 200,
-        json: async () => {
-          throw new SyntaxError('Unexpected token <');
-        },
+        json: () => Promise.reject(new SyntaxError('Unexpected token <')),
       } as unknown as Response);
 
       await expect(service.onModuleInit()).rejects.toThrow(SyntaxError);

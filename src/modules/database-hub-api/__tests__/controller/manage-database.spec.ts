@@ -4,12 +4,9 @@ import { OperationResult } from '../../../../common/dto/operation-result.dto';
 import { ROLES_KEY } from '../../../../common/guards/roles.decorator';
 import { Role } from '../../../../common/roles/role.enum';
 import { DatabaseHubApiController } from '../../database-hub-api.controller';
-import {
-  CreateDatabaseDto,
-  ListDatabasesDto,
-  ManageDatabaseDto,
-} from '../../database-hub-api.dto';
+import { ManageDatabaseDto } from '../../database-hub-api.dto';
 import { DatabaseHubApiService } from '../../database-hub-api.service';
+import { prototypeMethod } from '../../../../../test/helpers/prototype-method';
 
 // @nestjs/typeorm and @nestjs/config are ESM-only and Jest runs as CommonJS.
 // The controller is built by hand, so the injection decorator can be a no-op.
@@ -25,7 +22,7 @@ describe('DatabaseHubApiController.manageDatabase', () => {
     >;
   };
   let controller: DatabaseHubApiController;
-  const handler = DatabaseHubApiController.prototype.manageDatabase;
+  const handler = prototypeMethod(DatabaseHubApiController.prototype, 'manageDatabase');
   const dto: ManageDatabaseDto = {
     numberOfTickets: 5,
     namespace: 'databases',

@@ -19,8 +19,8 @@ describe('execFileAsync', () => {
   });
 
   it('spawns the command with the given args and options, without a shell', async () => {
-    execFileMock.mockImplementation(((...params: unknown[]) =>
-      (params[3] as ExecCallback)(null, 'out', '')) as never);
+    execFileMock.mockImplementation((...params: unknown[]) =>
+      (params[3] as ExecCallback)(null, 'out', ''));
 
     await execFileAsync('ansible-playbook', ['-i', 'host,', '; rm -rf /'], {
       timeout: 1000,
@@ -38,8 +38,8 @@ describe('execFileAsync', () => {
   });
 
   it('resolves with stdout and stderr on success', async () => {
-    execFileMock.mockImplementation(((...params: unknown[]) =>
-      (params[3] as ExecCallback)(null, 'the stdout', 'the stderr')) as never);
+    execFileMock.mockImplementation((...params: unknown[]) =>
+      (params[3] as ExecCallback)(null, 'the stdout', 'the stderr'));
 
     await expect(execFileAsync('cmd', [], { timeout: 1 })).resolves.toEqual({
       stdout: 'the stdout',
@@ -51,12 +51,12 @@ describe('execFileAsync', () => {
     const failure = Object.assign(new Error('Command failed: cmd'), {
       code: 2,
     });
-    execFileMock.mockImplementation(((...params: unknown[]) =>
+    execFileMock.mockImplementation((...params: unknown[]) =>
       (params[3] as ExecCallback)(
         failure,
         'partial out',
         'partial err',
-      )) as never);
+      ));
 
     const rejection = execFileAsync('cmd', [], { timeout: 1 });
 
@@ -74,8 +74,8 @@ describe('execFileAsync', () => {
     const failure = Object.assign(new Error('spawn cmd ENOENT'), {
       code: 'ENOENT',
     });
-    execFileMock.mockImplementation(((...params: unknown[]) =>
-      (params[3] as ExecCallback)(failure, '', '')) as never);
+    execFileMock.mockImplementation((...params: unknown[]) =>
+      (params[3] as ExecCallback)(failure, '', ''));
 
     await expect(
       execFileAsync('cmd', [], { timeout: 1 }),

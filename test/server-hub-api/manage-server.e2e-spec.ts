@@ -8,7 +8,6 @@ import {
   it,
   jest,
 } from '@jest/globals';
-import { load } from 'js-yaml';
 import {
   InfrastructureDepartment,
   InfrastructureOperationsLogEntity,
@@ -31,6 +30,8 @@ import {
   unknownKidAdminAuthorizationHeader,
   wrongKeyAdminAuthorizationHeader,
 } from '../helpers/test-auth';
+import { bodyOf, ErrorBody } from '../helpers/response-types';
+import { OperationResult } from '../../src/common/dto/operation-result.dto';
 
 const ENDPOINT = '/server-hub-api/manage-server';
 
@@ -125,12 +126,12 @@ describe('POST /server-hub-api/manage-server (e2e)', () => {
 
       const rows = await testApp.logRows();
       expect(rows).toHaveLength(1);
-      expect(rows[0].id).toBe(response.body.logId);
+      expect(rows[0].id).toBe(bodyOf<OperationResult>(response).logId);
       expect(rows[0].department).toBe(InfrastructureDepartment.SERVER);
       expect(rows[0].numberOfTicket).toBe(42);
       expect(JSON.parse(rows[0].instruction)).toEqual({ playbook: PLAYBOOK });
       expect(JSON.parse(rows[0].response)).toEqual(
-        response.body.executionResult,
+        bodyOf<OperationResult>(response).executionResult,
       );
     });
 
@@ -154,7 +155,7 @@ describe('POST /server-hub-api/manage-server (e2e)', () => {
 
       const response = await post(validBody()).expect(201);
 
-      expect(response.body.executionResult).toEqual({
+      expect(bodyOf<OperationResult>(response).executionResult).toEqual({
         success: false,
         stdout,
         stderr: 'ERROR! boom',
@@ -164,9 +165,9 @@ describe('POST /server-hub-api/manage-server (e2e)', () => {
       });
       const rows = await testApp.logRows();
       expect(rows).toHaveLength(1);
-      expect(rows[0].id).toBe(response.body.logId);
+      expect(rows[0].id).toBe(bodyOf<OperationResult>(response).logId);
       expect(JSON.parse(rows[0].response)).toEqual(
-        response.body.executionResult,
+        bodyOf<OperationResult>(response).executionResult,
       );
     });
 
@@ -178,7 +179,7 @@ describe('POST /server-hub-api/manage-server (e2e)', () => {
 
       const response = await post(validBody()).expect(201);
 
-      expect(response.body.executionResult).toEqual(
+      expect(bodyOf<OperationResult>(response).executionResult).toEqual(
         expect.objectContaining({
           success: false,
           exitCode: 'ETIMEDOUT',
@@ -247,7 +248,7 @@ describe('POST /server-hub-api/manage-server (e2e)', () => {
         validBody({ playbook: 'hosts: all\ntasks: []\n' }),
       ).expect(500);
 
-      expect(response.body.statusCode).toBe(500);
+      expect(bodyOf<ErrorBody>(response).statusCode).toBe(500);
       expect(testApp.process.calls).toEqual([]);
       expect(await testApp.logRows()).toEqual([]);
     });
@@ -286,7 +287,7 @@ describe('POST /server-hub-api/manage-server (e2e)', () => {
     it('returns 400 when the body is empty', async () => {
       const response = await post({}).expect(400);
 
-      expect(response.body.message).toEqual(
+      expect(bodyOf<ErrorBody>(response).message).toEqual(
         expect.arrayContaining([
           'numberOfTickets must be an integer number',
           'playbook must be a string',
@@ -301,7 +302,7 @@ describe('POST /server-hub-api/manage-server (e2e)', () => {
 
       const response = await post(body).expect(400);
 
-      expect(response.body.message).toEqual(
+      expect(bodyOf<ErrorBody>(response).message).toEqual(
         expect.arrayContaining(['playbook must be a string']),
       );
     });
@@ -309,7 +310,7 @@ describe('POST /server-hub-api/manage-server (e2e)', () => {
     it('returns 400 when playbook is empty', async () => {
       const response = await post(validBody({ playbook: '' })).expect(400);
 
-      expect(response.body.message).toEqual(['playbook should not be empty']);
+      expect(bodyOf<ErrorBody>(response).message).toEqual(['playbook should not be empty']);
     });
 
     it('returns 400 when playbook is not a string', async () => {
@@ -317,7 +318,7 @@ describe('POST /server-hub-api/manage-server (e2e)', () => {
         validBody({ playbook: [{ hosts: 'all' }] }),
       ).expect(400);
 
-      expect(response.body.message).toEqual(
+      expect(bodyOf<ErrorBody>(response).message).toEqual(
         expect.arrayContaining(['playbook must be a string']),
       );
       expect(testApp.process.calls).toEqual([]);
@@ -328,7 +329,7 @@ describe('POST /server-hub-api/manage-server (e2e)', () => {
         validBody({ playbook: '- hosts: all\n' + '#'.repeat(20000) }),
       ).expect(400);
 
-      expect(response.body.message).toEqual([
+      expect(bodyOf<ErrorBody>(response).message).toEqual([
         'playbook must be shorter than or equal to 20000 characters',
       ]);
       expect(testApp.process.calls).toEqual([]);
@@ -350,7 +351,7 @@ describe('POST /server-hub-api/manage-server (e2e)', () => {
         validBody({ inventory: 'localhost,' }),
       ).expect(400);
 
-      expect(response.body.message).toEqual([
+      expect(bodyOf<ErrorBody>(response).message).toEqual([
         'property inventory should not exist',
       ]);
       expect(testApp.process.calls).toEqual([]);
@@ -365,7 +366,7 @@ describe('POST /server-hub-api/manage-server (e2e)', () => {
 
       const response = await post(body).expect(400);
 
-      expect(response.body.message).toEqual(
+      expect(bodyOf<ErrorBody>(response).message).toEqual(
         expect.arrayContaining([
           'numberOfTickets must be an integer number',
           'numberOfTickets should not be empty',
@@ -384,7 +385,7 @@ describe('POST /server-hub-api/manage-server (e2e)', () => {
         400,
       );
 
-      expect(response.body.message).toEqual([
+      expect(bodyOf<ErrorBody>(response).message).toEqual([
         'numberOfTickets must be an integer number',
       ]);
       expect(testApp.process.calls).toEqual([]);
@@ -395,7 +396,7 @@ describe('POST /server-hub-api/manage-server (e2e)', () => {
         400,
       );
 
-      expect(response.body.message).toEqual([
+      expect(bodyOf<ErrorBody>(response).message).toEqual([
         'numberOfTickets must be an integer number',
       ]);
       expect(testApp.process.calls).toEqual([]);
@@ -428,7 +429,7 @@ describe('POST /server-hub-api/manage-server (e2e)', () => {
     it('returns 401 when the request has no bearer token', async () => {
       const response = await post(validBody(), null).expect(401);
 
-      expect(response.body.message).toBe('Missing or malformed bearer token');
+      expect(bodyOf<ErrorBody>(response).message).toBe('Missing or malformed bearer token');
     });
 
     it('returns 401 for a non-bearer authorization scheme', async () => {
@@ -436,13 +437,13 @@ describe('POST /server-hub-api/manage-server (e2e)', () => {
         401,
       );
 
-      expect(response.body.message).toBe('Missing or malformed bearer token');
+      expect(bodyOf<ErrorBody>(response).message).toBe('Missing or malformed bearer token');
     });
 
     it('returns 401 for a garbage token', async () => {
       const response = await post(validBody(), 'Bearer not-a-jwt').expect(401);
 
-      expect(response.body.message).toBe('Invalid or expired token');
+      expect(bodyOf<ErrorBody>(response).message).toBe('Invalid or expired token');
     });
 
     it('returns 401 for an expired token', async () => {
@@ -451,7 +452,7 @@ describe('POST /server-hub-api/manage-server (e2e)', () => {
         expiredAdminAuthorizationHeader(),
       ).expect(401);
 
-      expect(response.body.message).toBe('Invalid or expired token');
+      expect(bodyOf<ErrorBody>(response).message).toBe('Invalid or expired token');
     });
 
     it('returns 401 for a token signed with the wrong key', async () => {
@@ -460,7 +461,7 @@ describe('POST /server-hub-api/manage-server (e2e)', () => {
         wrongKeyAdminAuthorizationHeader(),
       ).expect(401);
 
-      expect(response.body.message).toBe('Invalid or expired token');
+      expect(bodyOf<ErrorBody>(response).message).toBe('Invalid or expired token');
     });
 
     it('returns 401 for a token with an unknown kid', async () => {
@@ -469,7 +470,7 @@ describe('POST /server-hub-api/manage-server (e2e)', () => {
         unknownKidAdminAuthorizationHeader(),
       ).expect(401);
 
-      expect(response.body.message).toBe('Invalid or expired token');
+      expect(bodyOf<ErrorBody>(response).message).toBe('Invalid or expired token');
     });
 
     it('authenticates before validating: an invalid payload without token is a 401', async () => {
@@ -495,7 +496,7 @@ describe('POST /server-hub-api/manage-server (e2e)', () => {
         }),
       ).expect(403);
 
-      expect(response.body.message).toBe('You do not have the required role');
+      expect(bodyOf<ErrorBody>(response).message).toBe('You do not have the required role');
       expect(testApp.process.calls).toEqual([]);
       expect(await testApp.logRows()).toEqual([]);
     });
@@ -524,7 +525,7 @@ describe('POST /server-hub-api/manage-server (e2e)', () => {
         }),
       ).expect(403);
 
-      expect(response.body.message).toBe(
+      expect(bodyOf<ErrorBody>(response).message).toBe(
         'This token was not issued for the infra-hub-api application',
       );
       expect(testApp.process.calls).toEqual([]);
@@ -553,7 +554,7 @@ describe('POST /server-hub-api/manage-server (e2e)', () => {
         }),
       ).expect(500);
 
-      expect(response.body.statusCode).toBe(500);
+      expect(bodyOf<ErrorBody>(response).statusCode).toBe(500);
       expect(testApp.process.calls).toEqual([]);
     });
   });

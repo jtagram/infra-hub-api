@@ -1,16 +1,11 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { RequestMethod } from '@nestjs/common';
-import { OperationResult } from '../../../../common/dto/operation-result.dto';
 import { ROLES_KEY } from '../../../../common/guards/roles.decorator';
 import { Role } from '../../../../common/roles/role.enum';
 import { KubernetesHubApiController } from '../../kubernates-hub-api.controller';
-import {
-  ExecuteKubectlCommandDto,
-  ListDeploymentsDto,
-  ManageKubernetesDto,
-} from '../../kubernates-hub-api.dto';
-import { KubernetesAction } from '../../kubernates-hub-api.playbook';
+import { ListDeploymentsDto } from '../../kubernates-hub-api.dto';
 import { KubernetesHubApiService } from '../../kubernates-hub-api.service';
+import { prototypeMethod } from '../../../../../test/helpers/prototype-method';
 
 // @nestjs/typeorm and @nestjs/config are ESM-only and Jest runs as CommonJS.
 // The controller is built by hand, so the injection decorator can be a no-op.
@@ -24,7 +19,7 @@ describe('KubernetesHubApiController.listDeployments', () => {
     listDeployments: jest.Mock<(dto: ListDeploymentsDto) => Promise<unknown>>;
   };
   let controller: KubernetesHubApiController;
-  const handler = KubernetesHubApiController.prototype.listDeployments;
+  const handler = prototypeMethod(KubernetesHubApiController.prototype, 'listDeployments');
 
   beforeEach(() => {
     service = {

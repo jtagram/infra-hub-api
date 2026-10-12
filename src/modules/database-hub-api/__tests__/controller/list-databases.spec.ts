@@ -1,15 +1,11 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { RequestMethod } from '@nestjs/common';
-import { OperationResult } from '../../../../common/dto/operation-result.dto';
 import { ROLES_KEY } from '../../../../common/guards/roles.decorator';
 import { Role } from '../../../../common/roles/role.enum';
 import { DatabaseHubApiController } from '../../database-hub-api.controller';
-import {
-  CreateDatabaseDto,
-  ListDatabasesDto,
-  ManageDatabaseDto,
-} from '../../database-hub-api.dto';
+import { ListDatabasesDto } from '../../database-hub-api.dto';
 import { DatabaseHubApiService } from '../../database-hub-api.service';
+import { prototypeMethod } from '../../../../../test/helpers/prototype-method';
 
 // @nestjs/typeorm and @nestjs/config are ESM-only and Jest runs as CommonJS.
 // The controller is built by hand, so the injection decorator can be a no-op.
@@ -23,7 +19,7 @@ describe('DatabaseHubApiController.listDatabases', () => {
     listDatabases: jest.Mock<(dto: ListDatabasesDto) => Promise<string[]>>;
   };
   let controller: DatabaseHubApiController;
-  const handler = DatabaseHubApiController.prototype.listDatabases;
+  const handler = prototypeMethod(DatabaseHubApiController.prototype, 'listDatabases');
 
   beforeEach(() => {
     service = {

@@ -173,24 +173,34 @@ export async function createAppTestApp(): Promise<AppTestApp> {
   const jwk = createPublicKey(publicKeyPem).export({ format: 'jwk' });
   const fetchSpy = jest
     .spyOn(globalThis, 'fetch')
-    .mockImplementation(async (input) => {
-      const url = typeof input === 'string' ? input : String(input);
+    .mockImplementation((input) => {
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.href
+            : input.url;
       if (url === `${IAM_API_URL}/.well-known/jwks.json`) {
-        return new Response(
-          JSON.stringify({ keys: [{ ...jwk, kid: TEST_KEY_ID }] }),
-          { status: 200, headers: { 'content-type': 'application/json' } },
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({ keys: [{ ...jwk, kid: TEST_KEY_ID }] }),
+            { status: 200, headers: { 'content-type': 'application/json' } },
+          ),
         );
       }
-      throw new Error(`Unexpected outbound HTTP call in e2e: ${url}`);
+      return Promise.reject(
+        new Error(`Unexpected outbound HTTP call in e2e: ${url}`),
+      );
     });
 
   // ---- process layer ------------------------------------------------------
   const calls: ExecCall[] = [];
   const realProcessAttempts: string[] = [];
   type Behavior = (command: string, args: string[]) => Promise<ExecFileResult>;
-  const noBehavior: Behavior = async () => {
-    throw new Error('e2e: no process stub behavior configured for this test');
-  };
+  const noBehavior: Behavior = () =>
+    Promise.reject(
+      new Error('e2e: no process stub behavior configured for this test'),
+    );
   let behavior: Behavior = noBehavior;
 
   const childProcessGuard = (name: string) => () => {
@@ -247,7 +257,7 @@ export async function createAppTestApp(): Promise<AppTestApp> {
     calls,
     realProcessAttempts,
     succeedWith: (stdout, stderr = '') => {
-      behavior = async () => ({ stdout, stderr });
+      behavior = () => Promise.resolve({ stdout, stderr });
     },
     failWith: ({
       message = 'Command failed: ansible-playbook',
@@ -255,14 +265,13 @@ export async function createAppTestApp(): Promise<AppTestApp> {
       stdout = '',
       stderr = '',
     }) => {
-      behavior = async () => {
-        throw new actualExecHelper.ExecFileError(message, code, stdout, stderr);
-      };
+      behavior = () =>
+        Promise.reject(
+          new actualExecHelper.ExecFileError(message, code, stdout, stderr),
+        );
     },
     throwWith: (error) => {
-      behavior = async () => {
-        throw error;
-      };
+      behavior = () => Promise.reject(error);
     },
     reset: () => {
       calls.length = 0;
@@ -317,7 +326,8 @@ export async function createAppTestApp(): Promise<AppTestApp> {
       dataSource,
       process: processStub,
       fetchSpy,
-      http: () => request(app.getHttpServer()),
+      http: () =>
+        request(app.getHttpServer() as Parameters<typeof request>[0]),
       logRows: () =>
         dataSource
           .getRepository(InfrastructureOperationsLogEntity)

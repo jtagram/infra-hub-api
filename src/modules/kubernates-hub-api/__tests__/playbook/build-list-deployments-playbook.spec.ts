@@ -1,14 +1,7 @@
 import { describe, expect, it } from '@jest/globals';
 import { load } from 'js-yaml';
 import {
-  buildKubectlCommandPlaybook,
-  buildKubernetesManifestPlaybook,
   buildListDeploymentsPlaybook,
-  KubectlCommandPlaybookInput,
-  KubectlCommandPlaybookInputBuilder,
-  KubernetesAction,
-  KubernetesManifestPlaybookInput,
-  KubernetesManifestPlaybookInputBuilder,
 } from '../../kubernates-hub-api.playbook';
 
 type Task = Record<string, unknown> & { name: string };

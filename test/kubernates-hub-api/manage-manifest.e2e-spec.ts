@@ -31,6 +31,8 @@ import {
   unknownKidAdminAuthorizationHeader,
   wrongKeyAdminAuthorizationHeader,
 } from '../helpers/test-auth';
+import { bodyOf, ErrorBody } from '../helpers/response-types';
+import { OperationResult } from '../../src/common/dto/operation-result.dto';
 
 const ENDPOINT = '/kubernates-hub-api/manage-manifest';
 
@@ -195,7 +197,7 @@ describe('POST /kubernates-hub-api/manage-manifest (e2e)', () => {
 
       const rows = await testApp.logRows();
       expect(rows).toHaveLength(1);
-      expect(rows[0].id).toBe(response.body.logId);
+      expect(rows[0].id).toBe(bodyOf<OperationResult>(response).logId);
       expect(rows[0].department).toBe(InfrastructureDepartment.KUBERNETES);
       expect(rows[0].numberOfTicket).toBe(42);
       expect(JSON.parse(rows[0].instruction)).toEqual({
@@ -203,7 +205,7 @@ describe('POST /kubernates-hub-api/manage-manifest (e2e)', () => {
         manifest: MANIFEST,
       });
       expect(JSON.parse(rows[0].response)).toEqual(
-        response.body.executionResult,
+        bodyOf<OperationResult>(response).executionResult,
       );
     });
 
@@ -215,7 +217,7 @@ describe('POST /kubernates-hub-api/manage-manifest (e2e)', () => {
       await post(validBody({ namespace: 'billing' })).expect(201);
 
       const [row] = await testApp.logRows();
-      expect(Object.keys(JSON.parse(row.instruction))).toEqual([
+      expect(Object.keys(JSON.parse(row.instruction) as Record<string, unknown>)).toEqual([
         'action',
         'manifest',
       ]);
@@ -236,7 +238,7 @@ describe('POST /kubernates-hub-api/manage-manifest (e2e)', () => {
 
       const response = await post(validBody()).expect(201);
 
-      expect(response.body.executionResult).toEqual({
+      expect(bodyOf<OperationResult>(response).executionResult).toEqual({
         success: false,
         stdout,
         stderr: '',
@@ -246,9 +248,9 @@ describe('POST /kubernates-hub-api/manage-manifest (e2e)', () => {
       });
       const rows = await testApp.logRows();
       expect(rows).toHaveLength(1);
-      expect(rows[0].id).toBe(response.body.logId);
+      expect(rows[0].id).toBe(bodyOf<OperationResult>(response).logId);
       expect(JSON.parse(rows[0].response)).toEqual(
-        response.body.executionResult,
+        bodyOf<OperationResult>(response).executionResult,
       );
     });
 
@@ -260,7 +262,7 @@ describe('POST /kubernates-hub-api/manage-manifest (e2e)', () => {
 
       const response = await post(validBody()).expect(201);
 
-      expect(response.body.executionResult).toEqual(
+      expect(bodyOf<OperationResult>(response).executionResult).toEqual(
         expect.objectContaining({
           success: false,
           exitCode: 'ETIMEDOUT',
@@ -316,7 +318,7 @@ describe('POST /kubernates-hub-api/manage-manifest (e2e)', () => {
     it('returns 400 when the body is empty', async () => {
       const response = await post({}).expect(400);
 
-      expect(response.body.message).toEqual(
+      expect(bodyOf<ErrorBody>(response).message).toEqual(
         expect.arrayContaining([
           'namespace must be a string',
           'action must be one of the following values: apply, delete, create',
@@ -332,7 +334,7 @@ describe('POST /kubernates-hub-api/manage-manifest (e2e)', () => {
 
       const response = await post(body).expect(400);
 
-      expect(response.body.message).toEqual(
+      expect(bodyOf<ErrorBody>(response).message).toEqual(
         expect.arrayContaining(['namespace must be a string']),
       );
     });
@@ -340,13 +342,13 @@ describe('POST /kubernates-hub-api/manage-manifest (e2e)', () => {
     it('returns 400 when namespace is empty', async () => {
       const response = await post(validBody({ namespace: '' })).expect(400);
 
-      expect(response.body.message).toEqual(['namespace should not be empty']);
+      expect(bodyOf<ErrorBody>(response).message).toEqual(['namespace should not be empty']);
     });
 
     it('returns 400 when namespace is not a string', async () => {
       const response = await post(validBody({ namespace: 123 })).expect(400);
 
-      expect(response.body.message).toEqual(
+      expect(bodyOf<ErrorBody>(response).message).toEqual(
         expect.arrayContaining(['namespace must be a string']),
       );
     });
@@ -356,7 +358,7 @@ describe('POST /kubernates-hub-api/manage-manifest (e2e)', () => {
         validBody({ namespace: 'a'.repeat(64) }),
       ).expect(400);
 
-      expect(response.body.message).toEqual([
+      expect(bodyOf<ErrorBody>(response).message).toEqual([
         'namespace must be shorter than or equal to 63 characters',
       ]);
     });
@@ -375,7 +377,7 @@ describe('POST /kubernates-hub-api/manage-manifest (e2e)', () => {
 
       const response = await post(body).expect(400);
 
-      expect(response.body.message).toEqual([
+      expect(bodyOf<ErrorBody>(response).message).toEqual([
         'action must be one of the following values: apply, delete, create',
       ]);
     });
@@ -383,7 +385,7 @@ describe('POST /kubernates-hub-api/manage-manifest (e2e)', () => {
     it('returns 400 for an unsupported action', async () => {
       const response = await post(validBody({ action: 'replace' })).expect(400);
 
-      expect(response.body.message).toEqual([
+      expect(bodyOf<ErrorBody>(response).message).toEqual([
         'action must be one of the following values: apply, delete, create',
       ]);
       expect(testApp.process.calls).toEqual([]);
@@ -400,7 +402,7 @@ describe('POST /kubernates-hub-api/manage-manifest (e2e)', () => {
 
       const response = await post(body).expect(400);
 
-      expect(response.body.message).toEqual(
+      expect(bodyOf<ErrorBody>(response).message).toEqual(
         expect.arrayContaining(['manifest must be a string']),
       );
     });
@@ -408,7 +410,7 @@ describe('POST /kubernates-hub-api/manage-manifest (e2e)', () => {
     it('returns 400 when manifest is empty', async () => {
       const response = await post(validBody({ manifest: '' })).expect(400);
 
-      expect(response.body.message).toEqual(['manifest should not be empty']);
+      expect(bodyOf<ErrorBody>(response).message).toEqual(['manifest should not be empty']);
     });
 
     it('returns 400 when manifest is not a string', async () => {
@@ -416,7 +418,7 @@ describe('POST /kubernates-hub-api/manage-manifest (e2e)', () => {
         validBody({ manifest: { kind: 'Pod' } }),
       ).expect(400);
 
-      expect(response.body.message).toEqual(
+      expect(bodyOf<ErrorBody>(response).message).toEqual(
         expect.arrayContaining(['manifest must be a string']),
       );
     });
@@ -426,7 +428,7 @@ describe('POST /kubernates-hub-api/manage-manifest (e2e)', () => {
         validBody({ manifest: 'a'.repeat(20001) }),
       ).expect(400);
 
-      expect(response.body.message).toEqual([
+      expect(bodyOf<ErrorBody>(response).message).toEqual([
         'manifest must be shorter than or equal to 20000 characters',
       ]);
       expect(testApp.process.calls).toEqual([]);
@@ -445,7 +447,7 @@ describe('POST /kubernates-hub-api/manage-manifest (e2e)', () => {
     it('returns 400 on an unknown property', async () => {
       const response = await post(validBody({ dryRun: true })).expect(400);
 
-      expect(response.body.message).toEqual([
+      expect(bodyOf<ErrorBody>(response).message).toEqual([
         'property dryRun should not exist',
       ]);
       expect(testApp.process.calls).toEqual([]);
@@ -460,7 +462,7 @@ describe('POST /kubernates-hub-api/manage-manifest (e2e)', () => {
 
       const response = await post(body).expect(400);
 
-      expect(response.body.message).toEqual(
+      expect(bodyOf<ErrorBody>(response).message).toEqual(
         expect.arrayContaining([
           'numberOfTickets must be an integer number',
           'numberOfTickets should not be empty',
@@ -479,7 +481,7 @@ describe('POST /kubernates-hub-api/manage-manifest (e2e)', () => {
         400,
       );
 
-      expect(response.body.message).toEqual([
+      expect(bodyOf<ErrorBody>(response).message).toEqual([
         'numberOfTickets must be an integer number',
       ]);
       expect(testApp.process.calls).toEqual([]);
@@ -490,7 +492,7 @@ describe('POST /kubernates-hub-api/manage-manifest (e2e)', () => {
         400,
       );
 
-      expect(response.body.message).toEqual([
+      expect(bodyOf<ErrorBody>(response).message).toEqual([
         'numberOfTickets must be an integer number',
       ]);
       expect(testApp.process.calls).toEqual([]);
@@ -527,7 +529,7 @@ describe('POST /kubernates-hub-api/manage-manifest (e2e)', () => {
     it('returns 401 when the request has no bearer token', async () => {
       const response = await post(validBody(), null).expect(401);
 
-      expect(response.body.message).toBe('Missing or malformed bearer token');
+      expect(bodyOf<ErrorBody>(response).message).toBe('Missing or malformed bearer token');
     });
 
     it('returns 401 for a non-bearer authorization scheme', async () => {
@@ -535,13 +537,13 @@ describe('POST /kubernates-hub-api/manage-manifest (e2e)', () => {
         401,
       );
 
-      expect(response.body.message).toBe('Missing or malformed bearer token');
+      expect(bodyOf<ErrorBody>(response).message).toBe('Missing or malformed bearer token');
     });
 
     it('returns 401 for a garbage token', async () => {
       const response = await post(validBody(), 'Bearer not-a-jwt').expect(401);
 
-      expect(response.body.message).toBe('Invalid or expired token');
+      expect(bodyOf<ErrorBody>(response).message).toBe('Invalid or expired token');
     });
 
     it('returns 401 for an expired token', async () => {
@@ -550,7 +552,7 @@ describe('POST /kubernates-hub-api/manage-manifest (e2e)', () => {
         expiredAdminAuthorizationHeader(),
       ).expect(401);
 
-      expect(response.body.message).toBe('Invalid or expired token');
+      expect(bodyOf<ErrorBody>(response).message).toBe('Invalid or expired token');
     });
 
     it('returns 401 for a token signed with the wrong key', async () => {
@@ -559,7 +561,7 @@ describe('POST /kubernates-hub-api/manage-manifest (e2e)', () => {
         wrongKeyAdminAuthorizationHeader(),
       ).expect(401);
 
-      expect(response.body.message).toBe('Invalid or expired token');
+      expect(bodyOf<ErrorBody>(response).message).toBe('Invalid or expired token');
     });
 
     it('returns 401 for a token with an unknown kid', async () => {
@@ -568,7 +570,7 @@ describe('POST /kubernates-hub-api/manage-manifest (e2e)', () => {
         unknownKidAdminAuthorizationHeader(),
       ).expect(401);
 
-      expect(response.body.message).toBe('Invalid or expired token');
+      expect(bodyOf<ErrorBody>(response).message).toBe('Invalid or expired token');
     });
 
     it('authenticates before validating: an invalid payload without token is a 401', async () => {
@@ -594,7 +596,7 @@ describe('POST /kubernates-hub-api/manage-manifest (e2e)', () => {
         }),
       ).expect(403);
 
-      expect(response.body.message).toBe('You do not have the required role');
+      expect(bodyOf<ErrorBody>(response).message).toBe('You do not have the required role');
       expect(testApp.process.calls).toEqual([]);
       expect(await testApp.logRows()).toEqual([]);
     });
@@ -623,7 +625,7 @@ describe('POST /kubernates-hub-api/manage-manifest (e2e)', () => {
         }),
       ).expect(403);
 
-      expect(response.body.message).toBe(
+      expect(bodyOf<ErrorBody>(response).message).toBe(
         'This token was not issued for the infra-hub-api application',
       );
       expect(testApp.process.calls).toEqual([]);
@@ -652,7 +654,7 @@ describe('POST /kubernates-hub-api/manage-manifest (e2e)', () => {
         }),
       ).expect(500);
 
-      expect(response.body.statusCode).toBe(500);
+      expect(bodyOf<ErrorBody>(response).statusCode).toBe(500);
       expect(testApp.process.calls).toEqual([]);
     });
   });

@@ -1,5 +1,6 @@
 import { describe, expect, it } from '@jest/globals';
 import { EnvironmentVariables, validate } from '../env.validation';
+import { omit } from '../../../../test/helpers/omit';
 
 const validEnv = (): Record<string, unknown> => ({
   SERVER_SSH_HOST: 'pcbox.example.com',
@@ -36,7 +37,7 @@ describe('validate (environment variables)', () => {
   });
 
   it('rejects a missing SERVER_SSH_HOST', () => {
-    const { SERVER_SSH_HOST, ...env } = validEnv();
+    const env = omit(validEnv(), 'SERVER_SSH_HOST');
 
     expect(() => validate(env)).toThrow(
       'Missing required environment variable(s): SERVER_SSH_HOST',
@@ -44,7 +45,7 @@ describe('validate (environment variables)', () => {
   });
 
   it('rejects a missing SERVER_SSH_USER', () => {
-    const { SERVER_SSH_USER, ...env } = validEnv();
+    const env = omit(validEnv(), 'SERVER_SSH_USER');
 
     expect(() => validate(env)).toThrow(/SERVER_SSH_USER/);
   });
@@ -76,7 +77,7 @@ describe('validate (environment variables)', () => {
   });
 
   it('rejects a missing DB_HOST, DB_USERNAME, DB_PASSWORD and DB_NAME', () => {
-    const { DB_HOST, DB_USERNAME, DB_PASSWORD, DB_NAME, ...env } = validEnv();
+    const env = omit(validEnv(), 'DB_HOST', 'DB_USERNAME', 'DB_PASSWORD', 'DB_NAME');
 
     expect(() => validate(env)).toThrow(
       /DB_HOST, DB_USERNAME, DB_PASSWORD, DB_NAME/,
@@ -84,13 +85,13 @@ describe('validate (environment variables)', () => {
   });
 
   it('rejects a missing IAM_API_URL', () => {
-    const { IAM_API_URL, ...env } = validEnv();
+    const env = omit(validEnv(), 'IAM_API_URL');
 
     expect(() => validate(env)).toThrow(/IAM_API_URL/);
   });
 
   it('rejects a missing INFRA_HUB_API_APPLICATION_NAME', () => {
-    const { INFRA_HUB_API_APPLICATION_NAME, ...env } = validEnv();
+    const env = omit(validEnv(), 'INFRA_HUB_API_APPLICATION_NAME');
 
     expect(() => validate(env)).toThrow(/INFRA_HUB_API_APPLICATION_NAME/);
   });

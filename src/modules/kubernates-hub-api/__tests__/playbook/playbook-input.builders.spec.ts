@@ -1,21 +1,11 @@
 import { describe, expect, it } from '@jest/globals';
-import { load } from 'js-yaml';
 import {
-  buildKubectlCommandPlaybook,
-  buildKubernetesManifestPlaybook,
-  buildListDeploymentsPlaybook,
   KubectlCommandPlaybookInput,
   KubectlCommandPlaybookInputBuilder,
   KubernetesAction,
   KubernetesManifestPlaybookInput,
   KubernetesManifestPlaybookInputBuilder,
 } from '../../kubernates-hub-api.playbook';
-
-type Task = Record<string, unknown> & { name: string };
-type Play = { hosts: string; gather_facts: boolean; tasks: Task[] };
-const parsePlays = (yaml: string): Play[] => load(yaml) as Play[];
-const argvOf = (task: Task): string[] =>
-  (task['ansible.builtin.command'] as { argv: string[] }).argv;
 
 describe('KubernetesManifestPlaybookInputBuilder', () => {
   it('builds an input with every given field', () => {

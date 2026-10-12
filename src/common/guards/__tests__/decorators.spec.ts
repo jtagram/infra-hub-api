@@ -3,6 +3,7 @@ import { Reflector } from '@nestjs/core';
 import { Role } from '../../roles/role.enum';
 import { IS_PUBLIC_KEY, Public } from '../public.decorator';
 import { ROLES_KEY, Roles } from '../roles.decorator';
+import { prototypeMethod } from '../../../../test/helpers/prototype-method';
 
 describe('@Public', () => {
   it('uses "isPublic" as metadata key', () => {
@@ -15,7 +16,7 @@ describe('@Public', () => {
       open(): void {}
     }
 
-    expect(new Reflector().get(IS_PUBLIC_KEY, Sample.prototype.open)).toBe(
+    expect(new Reflector().get(IS_PUBLIC_KEY, prototypeMethod(Sample.prototype, 'open'))).toBe(
       true,
     );
   });
@@ -33,7 +34,7 @@ describe('@Public', () => {
     }
 
     expect(
-      new Reflector().get(IS_PUBLIC_KEY, Sample.prototype.closed),
+      new Reflector().get(IS_PUBLIC_KEY, prototypeMethod(Sample.prototype, 'closed')),
     ).toBeUndefined();
   });
 });
@@ -49,7 +50,7 @@ describe('@Roles', () => {
       restricted(): void {}
     }
 
-    expect(new Reflector().get(ROLES_KEY, Sample.prototype.restricted)).toEqual(
+    expect(new Reflector().get(ROLES_KEY, prototypeMethod(Sample.prototype, 'restricted'))).toEqual(
       [Role.ADMIN],
     );
   });
@@ -67,7 +68,7 @@ describe('@Roles', () => {
       anyone(): void {}
     }
 
-    expect(new Reflector().get(ROLES_KEY, Sample.prototype.anyone)).toEqual([]);
+    expect(new Reflector().get(ROLES_KEY, prototypeMethod(Sample.prototype, 'anyone'))).toEqual([]);
   });
 
   it('exposes ADMIN as the only role of the application', () => {

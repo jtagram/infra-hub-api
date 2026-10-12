@@ -26,6 +26,7 @@ import {
   unknownKidAdminAuthorizationHeader,
   wrongKeyAdminAuthorizationHeader,
 } from '../helpers/test-auth';
+import { bodyOf, ErrorBody } from '../helpers/response-types';
 
 const ENDPOINT = '/kubernates-hub-api/list-deployments';
 
@@ -174,7 +175,7 @@ describe('GET /kubernates-hub-api/list-deployments (e2e)', () => {
 
       const response = await get().expect(502);
 
-      expect(response.body.message).toBe(
+      expect(bodyOf<ErrorBody>(response).message).toBe(
         'Failed to list deployments: Failed to connect to the host via ssh: Connection timed out',
       );
     });
@@ -184,7 +185,7 @@ describe('GET /kubernates-hub-api/list-deployments (e2e)', () => {
 
       const response = await get().expect(502);
 
-      expect(response.body.message).toBe(
+      expect(bodyOf<ErrorBody>(response).message).toBe(
         'Failed to list deployments: ERROR! no inventory',
       );
     });
@@ -197,7 +198,7 @@ describe('GET /kubernates-hub-api/list-deployments (e2e)', () => {
 
       const response = await get().expect(502);
 
-      expect(response.body.message).toBe(
+      expect(bodyOf<ErrorBody>(response).message).toBe(
         'Failed to list deployments: Command failed: ansible-playbook (timed out)',
       );
     });
@@ -233,7 +234,7 @@ describe('GET /kubernates-hub-api/list-deployments (e2e)', () => {
     it('returns 400 when namespace is missing', async () => {
       const response = await get({}).expect(400);
 
-      expect(response.body.message).toEqual([
+      expect(bodyOf<ErrorBody>(response).message).toEqual([
         'namespace must be shorter than or equal to 63 characters',
         'namespace should not be empty',
         'namespace must be a string',
@@ -244,14 +245,14 @@ describe('GET /kubernates-hub-api/list-deployments (e2e)', () => {
     it('returns 400 when namespace is empty', async () => {
       const response = await get('namespace=').expect(400);
 
-      expect(response.body.message).toEqual(['namespace should not be empty']);
+      expect(bodyOf<ErrorBody>(response).message).toEqual(['namespace should not be empty']);
       expect(testApp.process.calls).toEqual([]);
     });
 
     it('returns 400 when namespace is repeated (array instead of string)', async () => {
       const response = await get('namespace=a&namespace=b').expect(400);
 
-      expect(response.body.message).toEqual(
+      expect(bodyOf<ErrorBody>(response).message).toEqual(
         expect.arrayContaining(['namespace must be a string']),
       );
       expect(testApp.process.calls).toEqual([]);
@@ -260,7 +261,7 @@ describe('GET /kubernates-hub-api/list-deployments (e2e)', () => {
     it('returns 400 when namespace is longer than 63 characters', async () => {
       const response = await get({ namespace: 'a'.repeat(64) }).expect(400);
 
-      expect(response.body.message).toEqual([
+      expect(bodyOf<ErrorBody>(response).message).toEqual([
         'namespace must be shorter than or equal to 63 characters',
       ]);
       expect(testApp.process.calls).toEqual([]);
@@ -282,7 +283,7 @@ describe('GET /kubernates-hub-api/list-deployments (e2e)', () => {
         allNamespaces: 'true',
       }).expect(400);
 
-      expect(response.body.message).toEqual([
+      expect(bodyOf<ErrorBody>(response).message).toEqual([
         'property allNamespaces should not exist',
       ]);
       expect(testApp.process.calls).toEqual([]);
@@ -293,7 +294,7 @@ describe('GET /kubernates-hub-api/list-deployments (e2e)', () => {
     it('returns 401 when the request has no bearer token', async () => {
       const response = await get(undefined, null).expect(401);
 
-      expect(response.body.message).toBe('Missing or malformed bearer token');
+      expect(bodyOf<ErrorBody>(response).message).toBe('Missing or malformed bearer token');
     });
 
     it('returns 401 for a non-bearer authorization scheme', async () => {
@@ -301,13 +302,13 @@ describe('GET /kubernates-hub-api/list-deployments (e2e)', () => {
         401,
       );
 
-      expect(response.body.message).toBe('Missing or malformed bearer token');
+      expect(bodyOf<ErrorBody>(response).message).toBe('Missing or malformed bearer token');
     });
 
     it('returns 401 for a garbage token', async () => {
       const response = await get(undefined, 'Bearer not-a-jwt').expect(401);
 
-      expect(response.body.message).toBe('Invalid or expired token');
+      expect(bodyOf<ErrorBody>(response).message).toBe('Invalid or expired token');
     });
 
     it('returns 401 for an expired token', async () => {
@@ -316,7 +317,7 @@ describe('GET /kubernates-hub-api/list-deployments (e2e)', () => {
         expiredAdminAuthorizationHeader(),
       ).expect(401);
 
-      expect(response.body.message).toBe('Invalid or expired token');
+      expect(bodyOf<ErrorBody>(response).message).toBe('Invalid or expired token');
     });
 
     it('returns 401 for a token signed with the wrong key', async () => {
@@ -325,7 +326,7 @@ describe('GET /kubernates-hub-api/list-deployments (e2e)', () => {
         wrongKeyAdminAuthorizationHeader(),
       ).expect(401);
 
-      expect(response.body.message).toBe('Invalid or expired token');
+      expect(bodyOf<ErrorBody>(response).message).toBe('Invalid or expired token');
     });
 
     it('returns 401 for a token with an unknown kid', async () => {
@@ -334,7 +335,7 @@ describe('GET /kubernates-hub-api/list-deployments (e2e)', () => {
         unknownKidAdminAuthorizationHeader(),
       ).expect(401);
 
-      expect(response.body.message).toBe('Invalid or expired token');
+      expect(bodyOf<ErrorBody>(response).message).toBe('Invalid or expired token');
     });
 
     it('authenticates before validating: an invalid query without token is a 401', async () => {
@@ -359,7 +360,7 @@ describe('GET /kubernates-hub-api/list-deployments (e2e)', () => {
         }),
       ).expect(403);
 
-      expect(response.body.message).toBe('You do not have the required role');
+      expect(bodyOf<ErrorBody>(response).message).toBe('You do not have the required role');
       expect(testApp.process.calls).toEqual([]);
     });
 
@@ -387,7 +388,7 @@ describe('GET /kubernates-hub-api/list-deployments (e2e)', () => {
         }),
       ).expect(403);
 
-      expect(response.body.message).toBe(
+      expect(bodyOf<ErrorBody>(response).message).toBe(
         'This token was not issued for the infra-hub-api application',
       );
       expect(testApp.process.calls).toEqual([]);
@@ -414,7 +415,7 @@ describe('GET /kubernates-hub-api/list-deployments (e2e)', () => {
         }),
       ).expect(500);
 
-      expect(response.body.statusCode).toBe(500);
+      expect(bodyOf<ErrorBody>(response).statusCode).toBe(500);
       expect(testApp.process.calls).toEqual([]);
     });
   });

@@ -2,6 +2,7 @@ import { describe, expect, it } from '@jest/globals';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { CreateDatabaseDto } from '../../database-hub-api.dto';
+import { omit } from '../../../../../test/helpers/omit';
 
 // Same options main.ts gives the global ValidationPipe (transform only affects
 // the returned instance, not what is accepted).
@@ -26,7 +27,7 @@ describe('CreateDatabaseDto', () => {
   });
 
   it('rejects a missing numberOfTickets', async () => {
-    const { numberOfTickets, ...payload } = valid();
+    const payload = omit(valid(), 'numberOfTickets');
 
     expect(await propertiesWithErrors(payload)).toEqual(['numberOfTickets']);
   });
@@ -38,7 +39,7 @@ describe('CreateDatabaseDto', () => {
   });
 
   it('rejects a missing or empty namespace', async () => {
-    const { namespace, ...payload } = valid();
+    const payload = omit(valid(), 'namespace');
 
     expect(await propertiesWithErrors(payload)).toEqual(['namespace']);
     expect(await propertiesWithErrors({ ...valid(), namespace: '' })).toEqual([
@@ -53,7 +54,7 @@ describe('CreateDatabaseDto', () => {
   });
 
   it('rejects a missing or empty deployment', async () => {
-    const { deployment, ...payload } = valid();
+    const payload = omit(valid(), 'deployment');
 
     expect(await propertiesWithErrors(payload)).toEqual(['deployment']);
     expect(await propertiesWithErrors({ ...valid(), deployment: '' })).toEqual([
@@ -68,7 +69,7 @@ describe('CreateDatabaseDto', () => {
   });
 
   it('rejects a missing or empty dbName', async () => {
-    const { dbName, ...payload } = valid();
+    const payload = omit(valid(), 'dbName');
 
     expect(await propertiesWithErrors(payload)).toEqual(['dbName']);
     expect(await propertiesWithErrors({ ...valid(), dbName: '' })).toContain(

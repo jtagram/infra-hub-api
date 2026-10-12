@@ -7,7 +7,6 @@ import {
   it,
   jest,
 } from '@jest/globals';
-import { BadGatewayException } from '@nestjs/common';
 import { load } from 'js-yaml';
 import { DataSource, Repository } from 'typeorm';
 import { createInMemoryDataSource } from '../../../../../test/helpers/in-memory-db';
@@ -41,10 +40,8 @@ const FAILURE: AnsibleExecutionResult = {
   errorMessage: 'failed',
   errorCode: 2,
 };
-const debugOutput = (msg: string) =>
-  `TASK [Emit deployment names]\nok: [pcbox] => {\n    "msg": ${JSON.stringify(msg)}\n}\n`;
 const tasksOf = (playbook: string) =>
-  (load(playbook) as { tasks: Record<string, any>[] }[])[0].tasks;
+  (load(playbook) as { tasks: Record<string, unknown>[] }[])[0].tasks;
 
 describe('KubernetesHubApiService.manageKubernatesManifest (in-memory db)', () => {
   let dataSource: DataSource;
