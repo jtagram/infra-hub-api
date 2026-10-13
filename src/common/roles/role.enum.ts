@@ -3,5 +3,5 @@
  * service user), so a single role is enough -- no need for the granularity
  * ticket-hub-api has across multiple human-facing roles. */
 export enum Role {
-  ADMIN = 'ADMIN',
+	ADMIN = 'ADMIN',
 }

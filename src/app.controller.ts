@@ -7,12 +7,12 @@ import { ApiGetHello } from './swagger/app.swagger';
 @ApiTags('App')
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService) {}
+	constructor(private readonly appService: AppService) {}
 
-  @Get()
-  @Public()
-  @ApiGetHello()
-  getHello(): string {
-    return this.appService.getHello();
-  }
+	@Get()
+	@Public()
+	@ApiGetHello()
+	getHello(): string {
+		return this.appService.getHello();
+	}
 }

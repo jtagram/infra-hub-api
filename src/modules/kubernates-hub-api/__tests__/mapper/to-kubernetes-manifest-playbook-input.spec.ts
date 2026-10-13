@@ -2,36 +2,34 @@ import { describe, expect, it } from '@jest/globals';
 import { ManageKubernetesDto } from '../../kubernates-hub-api.dto';
 import { KubernetesHubApiMapper } from '../../kubernates-hub-api.mapper';
 import {
-  KubernetesAction,
-  KubernetesManifestPlaybookInput,
+	KubernetesAction,
+	KubernetesManifestPlaybookInput,
 } from '../../kubernates-hub-api.playbook';
 
 const manageDto: ManageKubernetesDto = {
-  numberOfTickets: 14,
-  namespace: 'prod',
-  action: KubernetesAction.DELETE,
-  manifest: 'kind: Pod\nmetadata:\n  name: x',
+	numberOfTickets: 14,
+	namespace: 'prod',
+	action: KubernetesAction.DELETE,
+	manifest: 'kind: Pod\nmetadata:\n  name: x',
 };
 describe('KubernetesHubApiMapper.toKubernetesManifestPlaybookInput', () => {
-  it('maps namespace, action and manifest', () => {
-    expect(
-      KubernetesHubApiMapper.toKubernetesManifestPlaybookInput(manageDto),
-    ).toEqual({
-      namespace: 'prod',
-      action: 'delete',
-      manifest: 'kind: Pod\nmetadata:\n  name: x',
-    });
-  });
+	it('maps namespace, action and manifest', () => {
+		expect(KubernetesHubApiMapper.toKubernetesManifestPlaybookInput(manageDto)).toEqual({
+			namespace: 'prod',
+			action: 'delete',
+			manifest: 'kind: Pod\nmetadata:\n  name: x',
+		});
+	});
 
-  it('returns a KubernetesManifestPlaybookInput', () => {
-    expect(
-      KubernetesHubApiMapper.toKubernetesManifestPlaybookInput(manageDto),
-    ).toBeInstanceOf(KubernetesManifestPlaybookInput);
-  });
+	it('returns a KubernetesManifestPlaybookInput', () => {
+		expect(KubernetesHubApiMapper.toKubernetesManifestPlaybookInput(manageDto)).toBeInstanceOf(
+			KubernetesManifestPlaybookInput,
+		);
+	});
 
-  it('does not carry the ticket number into the playbook input', () => {
-    expect(
-      KubernetesHubApiMapper.toKubernetesManifestPlaybookInput(manageDto),
-    ).not.toHaveProperty('numberOfTickets');
-  });
+	it('does not carry the ticket number into the playbook input', () => {
+		expect(KubernetesHubApiMapper.toKubernetesManifestPlaybookInput(manageDto)).not.toHaveProperty(
+			'numberOfTickets',
+		);
+	});
 });

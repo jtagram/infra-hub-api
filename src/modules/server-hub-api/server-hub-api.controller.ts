@@ -10,14 +10,12 @@ import { ApiManageServer } from './swagger/server-hub-api.swagger';
 @ApiTags('Server Hub')
 @Controller('server-hub-api')
 export class ServerHubApiController {
-  constructor(private readonly serverHubApiService: ServerHubApiService) {}
+	constructor(private readonly serverHubApiService: ServerHubApiService) {}
 
-  @Post('manage-server')
-  @ApiManageServer()
-  @Roles(Role.ADMIN)
-  async manageServer(
-    @Body() dto: ManageServerDto,
-  ): Promise<OperationResult> {
-    return this.serverHubApiService.manageServer(dto);
-  }
+	@Post('manage-server')
+	@ApiManageServer()
+	@Roles(Role.ADMIN)
+	async manageServer(@Body() dto: ManageServerDto): Promise<OperationResult> {
+		return this.serverHubApiService.manageServer(dto);
+	}
 }

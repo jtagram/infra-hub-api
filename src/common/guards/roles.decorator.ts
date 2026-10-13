@@ -4,4 +4,4 @@ import { Role } from '../roles/role.enum';
 export const ROLES_KEY = 'roles';
 
 export const Roles = (...roles: Role[]): MethodDecorator & ClassDecorator =>
-  SetMetadata(ROLES_KEY, roles);
+	SetMetadata(ROLES_KEY, roles);

@@ -4,28 +4,28 @@ import { KubernetesHubApiMapper } from '../../kubernates-hub-api.mapper';
 import { KubectlCommandPlaybookInput } from '../../kubernates-hub-api.playbook';
 
 const kubectlDto: ExecuteKubectlCommandDto = {
-  numberOfTickets: 15,
-  kubectlCommand: 'get pods -A',
+	numberOfTickets: 15,
+	kubectlCommand: 'get pods -A',
 };
 describe('KubernetesHubApiMapper.toKubectlCommandPlaybookInput', () => {
-  it('maps the kubectl command', () => {
-    expect(
-      KubernetesHubApiMapper.toKubectlCommandPlaybookInput(kubectlDto),
-    ).toEqual({ kubectlCommand: 'get pods -A' });
-  });
+	it('maps the kubectl command', () => {
+		expect(KubernetesHubApiMapper.toKubectlCommandPlaybookInput(kubectlDto)).toEqual({
+			kubectlCommand: 'get pods -A',
+		});
+	});
 
-  it('returns a KubectlCommandPlaybookInput', () => {
-    expect(
-      KubernetesHubApiMapper.toKubectlCommandPlaybookInput(kubectlDto),
-    ).toBeInstanceOf(KubectlCommandPlaybookInput);
-  });
+	it('returns a KubectlCommandPlaybookInput', () => {
+		expect(KubernetesHubApiMapper.toKubectlCommandPlaybookInput(kubectlDto)).toBeInstanceOf(
+			KubectlCommandPlaybookInput,
+		);
+	});
 
-  it('passes the command verbatim, without trimming', () => {
-    expect(
-      KubernetesHubApiMapper.toKubectlCommandPlaybookInput({
-        ...kubectlDto,
-        kubectlCommand: '  get   pods  ',
-      }).kubectlCommand,
-    ).toBe('  get   pods  ');
-  });
+	it('passes the command verbatim, without trimming', () => {
+		expect(
+			KubernetesHubApiMapper.toKubectlCommandPlaybookInput({
+				...kubectlDto,
+				kubectlCommand: '  get   pods  ',
+			}).kubectlCommand,
+		).toBe('  get   pods  ');
+	});
 });

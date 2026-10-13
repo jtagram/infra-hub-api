@@ -5,13 +5,13 @@ import { buildLoggerOptions } from './logger.config';
 
 @Global()
 @Module({
-  imports: [
-    PinoLoggerModule.forRootAsync({
-      inject: [ConfigService],
-      useFactory: (configService: ConfigService) =>
-        buildLoggerOptions(configService.get<string>('LOG_LEVEL')!),
-    }),
-  ],
-  exports: [PinoLoggerModule],
+	imports: [
+		PinoLoggerModule.forRootAsync({
+			inject: [ConfigService],
+			useFactory: (configService: ConfigService) =>
+				buildLoggerOptions(configService.get<string>('LOG_LEVEL')!),
+		}),
+	],
+	exports: [PinoLoggerModule],
 })
 export class LoggerModule {}

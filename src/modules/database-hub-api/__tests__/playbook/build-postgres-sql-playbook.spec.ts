@@ -1,136 +1,130 @@
 import { describe, expect, it } from '@jest/globals';
 import { load } from 'js-yaml';
 import {
-  buildPostgresSqlPlaybook,
-  PostgresSqlPlaybookInputBuilder,
+	buildPostgresSqlPlaybook,
+	PostgresSqlPlaybookInputBuilder,
 } from '../../database-hub-api.playbook';
 
 const PSQL_AS_POSTGRES_USER_SCRIPT =
-  'if [ -z "$POSTGRES_USER" ]; then ' +
-  'echo "POSTGRES_USER is not set in this deployment" >&2; exit 1; fi; ' +
-  'exec psql -U "$POSTGRES_USER" "$@"';
+	'if [ -z "$POSTGRES_USER" ]; then ' +
+	'echo "POSTGRES_USER is not set in this deployment" >&2; exit 1; fi; ' +
+	'exec psql -U "$POSTGRES_USER" "$@"';
 
 const build = (sqlCode: string, overrides: Record<string, string> = {}) =>
-  buildPostgresSqlPlaybook(
-    new PostgresSqlPlaybookInputBuilder()
-      .withNamespace(overrides.namespace ?? 'databases')
-      .withDeployment(overrides.deployment ?? 'postgres')
-      .withDbName(overrides.dbName ?? 'app')
-      .withSqlCode(sqlCode)
-      .build(),
-  );
+	buildPostgresSqlPlaybook(
+		new PostgresSqlPlaybookInputBuilder()
+			.withNamespace(overrides.namespace ?? 'databases')
+			.withDeployment(overrides.deployment ?? 'postgres')
+			.withDbName(overrides.dbName ?? 'app')
+			.withSqlCode(sqlCode)
+			.build(),
+	);
 
 type Play = {
-  hosts: string;
-  gather_facts: boolean;
-  tasks: { name: string; 'ansible.builtin.command': { argv: string[] } }[];
+	hosts: string;
+	gather_facts: boolean;
+	tasks: { name: string; 'ansible.builtin.command': { argv: string[] } }[];
 };
 const parsePlay = (yaml: string): Play => (load(yaml) as Play[])[0];
 
 describe('buildPostgresSqlPlaybook', () => {
-  it('generates a YAML list with a single play over all hosts without fact gathering', () => {
-    const parsed = load(build('SELECT 1;')) as Play[];
+	it('generates a YAML list with a single play over all hosts without fact gathering', () => {
+		const parsed = load(build('SELECT 1;')) as Play[];
 
-    expect(Array.isArray(parsed)).toBe(true);
-    expect(parsed).toHaveLength(1);
-    expect(parsed[0].hosts).toBe('all');
-    expect(parsed[0].gather_facts).toBe(false);
-  });
+		expect(Array.isArray(parsed)).toBe(true);
+		expect(parsed).toHaveLength(1);
+		expect(parsed[0].hosts).toBe('all');
+		expect(parsed[0].gather_facts).toBe(false);
+	});
 
-  it('has one task that runs psql inside the deployment through microk8s kubectl', () => {
-    const play = parsePlay(build('SELECT 1;'));
+	it('has one task that runs psql inside the deployment through microk8s kubectl', () => {
+		const play = parsePlay(build('SELECT 1;'));
 
-    expect(play.tasks).toHaveLength(1);
-    expect(play.tasks[0].name).toBe('Execute SQL against target database');
-    expect(play.tasks[0]['ansible.builtin.command'].argv).toEqual([
-      'microk8s',
-      'kubectl',
-      'exec',
-      'deploy/postgres',
-      '-n',
-      'databases',
-      '--',
-      'sh',
-      '-c',
-      PSQL_AS_POSTGRES_USER_SCRIPT,
-      'sh',
-      '-d',
-      'app',
-      '-v',
-      'ON_ERROR_STOP=1',
-      '-c',
-      'SELECT 1;',
-    ]);
-  });
+		expect(play.tasks).toHaveLength(1);
+		expect(play.tasks[0].name).toBe('Execute SQL against target database');
+		expect(play.tasks[0]['ansible.builtin.command'].argv).toEqual([
+			'microk8s',
+			'kubectl',
+			'exec',
+			'deploy/postgres',
+			'-n',
+			'databases',
+			'--',
+			'sh',
+			'-c',
+			PSQL_AS_POSTGRES_USER_SCRIPT,
+			'sh',
+			'-d',
+			'app',
+			'-v',
+			'ON_ERROR_STOP=1',
+			'-c',
+			'SELECT 1;',
+		]);
+	});
 
-  it('uses the argv form of the command module (no shell involved)', () => {
-    const task = parsePlay(build('SELECT 1;')).tasks[0];
+	it('uses the argv form of the command module (no shell involved)', () => {
+		const task = parsePlay(build('SELECT 1;')).tasks[0];
 
-    expect(Object.keys(task)).toEqual(['name', 'ansible.builtin.command']);
-    expect(task['ansible.builtin.command']).not.toHaveProperty('cmd');
-    expect(task['ansible.builtin.command']).not.toHaveProperty('_raw_params');
-  });
+		expect(Object.keys(task)).toEqual(['name', 'ansible.builtin.command']);
+		expect(task['ansible.builtin.command']).not.toHaveProperty('cmd');
+		expect(task['ansible.builtin.command']).not.toHaveProperty('_raw_params');
+	});
 
-  it('keeps a hostile SQL string as one single argv element (YAML safe)', () => {
-    const sql = `SELECT 1; "quoted" 'single' # not a comment\n- !!python/object: x\n: {y}`;
+	it('keeps a hostile SQL string as one single argv element (YAML safe)', () => {
+		const sql = `SELECT 1; "quoted" 'single' # not a comment\n- !!python/object: x\n: {y}`;
 
-    const argv = parsePlay(build(sql)).tasks[0]['ansible.builtin.command'].argv;
+		const argv = parsePlay(build(sql)).tasks[0]['ansible.builtin.command'].argv;
 
-    expect(argv).toHaveLength(17);
-    expect(argv[argv.length - 1]).toBe(sql);
-  });
+		expect(argv).toHaveLength(17);
+		expect(argv[argv.length - 1]).toBe(sql);
+	});
 
-  it('keeps hostile namespace, deployment and dbName as single argv elements', () => {
-    const argv = parsePlay(
-      build('SELECT 1;', {
-        namespace: 'ns\n- injected',
-        deployment: 'dep: x',
-        dbName: '--help ; rm -rf /',
-      }),
-    ).tasks[0]['ansible.builtin.command'].argv;
+	it('keeps hostile namespace, deployment and dbName as single argv elements', () => {
+		const argv = parsePlay(
+			build('SELECT 1;', {
+				namespace: 'ns\n- injected',
+				deployment: 'dep: x',
+				dbName: '--help ; rm -rf /',
+			}),
+		).tasks[0]['ansible.builtin.command'].argv;
 
-    expect(argv).toHaveLength(17);
-    expect(argv[3]).toBe('deploy/dep: x');
-    expect(argv[5]).toBe('ns\n- injected');
-    expect(argv[12]).toBe('--help ; rm -rf /');
-  });
+		expect(argv).toHaveLength(17);
+		expect(argv[3]).toBe('deploy/dep: x');
+		expect(argv[5]).toBe('ns\n- injected');
+		expect(argv[12]).toBe('--help ; rm -rf /');
+	});
 
-  it('keeps the whole SQL as the -c value even when it looks like another option', () => {
-    const argv = parsePlay(build('-f /etc/passwd')).tasks[0][
-      'ansible.builtin.command'
-    ].argv;
+	it('keeps the whole SQL as the -c value even when it looks like another option', () => {
+		const argv = parsePlay(build('-f /etc/passwd')).tasks[0]['ansible.builtin.command'].argv;
 
-    expect(argv[argv.length - 2]).toBe('-c');
-    expect(argv[argv.length - 1]).toBe('-f /etc/passwd');
-  });
+		expect(argv[argv.length - 2]).toBe('-c');
+		expect(argv[argv.length - 1]).toBe('-f /etc/passwd');
+	});
 
-  it('passes Jinja expressions through verbatim (no !unsafe / raw escaping, see report)', () => {
-    const sql = 'SELECT \'{{ lookup("pipe", "id") }}\';';
+	it('passes Jinja expressions through verbatim (no !unsafe / raw escaping, see report)', () => {
+		const sql = 'SELECT \'{{ lookup("pipe", "id") }}\';';
 
-    const argv = parsePlay(build(sql)).tasks[0]['ansible.builtin.command'].argv;
+		const argv = parsePlay(build(sql)).tasks[0]['ansible.builtin.command'].argv;
 
-    expect(argv[argv.length - 1]).toBe(sql);
-  });
+		expect(argv[argv.length - 1]).toBe(sql);
+	});
 
-  it('resolves the superuser from the deployment POSTGRES_USER, never a fixed name', () => {
-    const argv = parsePlay(build('SELECT 1;')).tasks[0][
-      'ansible.builtin.command'
-    ].argv;
+	it('resolves the superuser from the deployment POSTGRES_USER, never a fixed name', () => {
+		const argv = parsePlay(build('SELECT 1;')).tasks[0]['ansible.builtin.command'].argv;
 
-    expect(argv).not.toContain('user-db');
-    expect(argv.slice(argv.indexOf('--') + 1, argv.indexOf('--') + 5)).toEqual([
-      'sh',
-      '-c',
-      PSQL_AS_POSTGRES_USER_SCRIPT,
-      'sh',
-    ]);
-  });
+		expect(argv).not.toContain('user-db');
+		expect(argv.slice(argv.indexOf('--') + 1, argv.indexOf('--') + 5)).toEqual([
+			'sh',
+			'-c',
+			PSQL_AS_POSTGRES_USER_SCRIPT,
+			'sh',
+		]);
+	});
 
-  it('stops on the first SQL error with ON_ERROR_STOP', () => {
-    const argv = parsePlay(build('SELECT 1;')).tasks[0][
-      'ansible.builtin.command'
-    ].argv;
+	it('stops on the first SQL error with ON_ERROR_STOP', () => {
+		const argv = parsePlay(build('SELECT 1;')).tasks[0]['ansible.builtin.command'].argv;
 
-    expect(argv[argv.indexOf('-v') + 1]).toBe('ON_ERROR_STOP=1');
-  });
+		expect(argv[argv.indexOf('-v') + 1]).toBe('ON_ERROR_STOP=1');
+	});
 });

@@ -4,8 +4,8 @@ import { ServerHubApiController } from './server-hub-api.controller';
 import { ServerHubApiService } from './server-hub-api.service';
 
 @Module({
-  imports: [AnsibleModule],
-  controllers: [ServerHubApiController],
-  providers: [ServerHubApiService],
+	imports: [AnsibleModule],
+	controllers: [ServerHubApiController],
+	providers: [ServerHubApiService],
 })
 export class ServerHubApiModule {}

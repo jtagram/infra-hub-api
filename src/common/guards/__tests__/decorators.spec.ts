@@ -6,72 +6,72 @@ import { ROLES_KEY, Roles } from '../roles.decorator';
 import { prototypeMethod } from '../../../../test/helpers/prototype-method';
 
 describe('@Public', () => {
-  it('uses "isPublic" as metadata key', () => {
-    expect(IS_PUBLIC_KEY).toBe('isPublic');
-  });
+	it('uses "isPublic" as metadata key', () => {
+		expect(IS_PUBLIC_KEY).toBe('isPublic');
+	});
 
-  it('marks a method as public', () => {
-    class Sample {
-      @Public()
-      open(): void {}
-    }
+	it('marks a method as public', () => {
+		class Sample {
+			@Public()
+			open(): void {}
+		}
 
-    expect(new Reflector().get(IS_PUBLIC_KEY, prototypeMethod(Sample.prototype, 'open'))).toBe(
-      true,
-    );
-  });
+		expect(new Reflector().get(IS_PUBLIC_KEY, prototypeMethod(Sample.prototype, 'open'))).toBe(
+			true,
+		);
+	});
 
-  it('marks a whole class as public', () => {
-    @Public()
-    class Sample {}
+	it('marks a whole class as public', () => {
+		@Public()
+		class Sample {}
 
-    expect(new Reflector().get(IS_PUBLIC_KEY, Sample)).toBe(true);
-  });
+		expect(new Reflector().get(IS_PUBLIC_KEY, Sample)).toBe(true);
+	});
 
-  it('leaves undecorated handlers without metadata', () => {
-    class Sample {
-      closed(): void {}
-    }
+	it('leaves undecorated handlers without metadata', () => {
+		class Sample {
+			closed(): void {}
+		}
 
-    expect(
-      new Reflector().get(IS_PUBLIC_KEY, prototypeMethod(Sample.prototype, 'closed')),
-    ).toBeUndefined();
-  });
+		expect(
+			new Reflector().get(IS_PUBLIC_KEY, prototypeMethod(Sample.prototype, 'closed')),
+		).toBeUndefined();
+	});
 });
 
 describe('@Roles', () => {
-  it('uses "roles" as metadata key', () => {
-    expect(ROLES_KEY).toBe('roles');
-  });
+	it('uses "roles" as metadata key', () => {
+		expect(ROLES_KEY).toBe('roles');
+	});
 
-  it('stores the given roles on a method', () => {
-    class Sample {
-      @Roles(Role.ADMIN)
-      restricted(): void {}
-    }
+	it('stores the given roles on a method', () => {
+		class Sample {
+			@Roles(Role.ADMIN)
+			restricted(): void {}
+		}
 
-    expect(new Reflector().get(ROLES_KEY, prototypeMethod(Sample.prototype, 'restricted'))).toEqual(
-      [Role.ADMIN],
-    );
-  });
+		expect(new Reflector().get(ROLES_KEY, prototypeMethod(Sample.prototype, 'restricted'))).toEqual(
+			[Role.ADMIN],
+		);
+	});
 
-  it('stores the given roles on a class', () => {
-    @Roles(Role.ADMIN)
-    class Sample {}
+	it('stores the given roles on a class', () => {
+		@Roles(Role.ADMIN)
+		class Sample {}
 
-    expect(new Reflector().get(ROLES_KEY, Sample)).toEqual([Role.ADMIN]);
-  });
+		expect(new Reflector().get(ROLES_KEY, Sample)).toEqual([Role.ADMIN]);
+	});
 
-  it('stores an empty list when called without roles', () => {
-    class Sample {
-      @Roles()
-      anyone(): void {}
-    }
+	it('stores an empty list when called without roles', () => {
+		class Sample {
+			@Roles()
+			anyone(): void {}
+		}
 
-    expect(new Reflector().get(ROLES_KEY, prototypeMethod(Sample.prototype, 'anyone'))).toEqual([]);
-  });
+		expect(new Reflector().get(ROLES_KEY, prototypeMethod(Sample.prototype, 'anyone'))).toEqual([]);
+	});
 
-  it('exposes ADMIN as the only role of the application', () => {
-    expect(Object.values(Role)).toEqual(['ADMIN']);
-  });
+	it('exposes ADMIN as the only role of the application', () => {
+		expect(Object.values(Role)).toEqual(['ADMIN']);
+	});
 });

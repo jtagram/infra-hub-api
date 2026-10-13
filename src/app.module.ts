@@ -19,24 +19,24 @@ import { ServerHubApiModule } from './modules/server-hub-api/server-hub-api.modu
 const jwtModule = JwtModule.register({});
 
 @Module({
-  imports: [
-    EnvModule,
-    LoggerModule,
-    ScheduleModule.forRoot(),
-    DatabaseModule,
-    jwtModule,
-    JwtPublicKeyModule,
-    HealthModule,
-    AnsibleModule,
-    DatabaseHubApiModule,
-    KubernetesHubApiModule,
-    ServerHubApiModule,
-  ],
-  controllers: [AppController],
-  providers: [
-    AppService,
-    { provide: APP_GUARD, useClass: JwtAuthGuard },
-    { provide: APP_GUARD, useClass: RolesGuard },
-  ],
+	imports: [
+		EnvModule,
+		LoggerModule,
+		ScheduleModule.forRoot(),
+		DatabaseModule,
+		jwtModule,
+		JwtPublicKeyModule,
+		HealthModule,
+		AnsibleModule,
+		DatabaseHubApiModule,
+		KubernetesHubApiModule,
+		ServerHubApiModule,
+	],
+	controllers: [AppController],
+	providers: [
+		AppService,
+		{ provide: APP_GUARD, useClass: JwtAuthGuard },
+		{ provide: APP_GUARD, useClass: RolesGuard },
+	],
 })
 export class AppModule {}

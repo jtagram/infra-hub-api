@@ -3,52 +3,52 @@ import { DataType, newDb } from 'pg-mem';
 import { DataSource, EntityTarget } from 'typeorm';
 
 export async function createInMemoryDataSource(
-  entities: EntityTarget<unknown>[],
+	entities: EntityTarget<unknown>[],
 ): Promise<DataSource> {
-  const db = newDb({ autoCreateForeignKeyIndices: true });
+	const db = newDb({ autoCreateForeignKeyIndices: true });
 
-  db.public.registerFunction({
-    name: 'current_database',
-    returns: DataType.text,
-    implementation: () => 'test',
-  });
-  db.public.registerFunction({
-    name: 'version',
-    returns: DataType.text,
-    implementation: () => 'PostgreSQL 16.0 (pg-mem)',
-  });
+	db.public.registerFunction({
+		name: 'current_database',
+		returns: DataType.text,
+		implementation: () => 'test',
+	});
+	db.public.registerFunction({
+		name: 'version',
+		returns: DataType.text,
+		implementation: () => 'PostgreSQL 16.0 (pg-mem)',
+	});
 
-  // `@PrimaryGeneratedColumn('uuid')` defaults to uuid_generate_v4() on Postgres.
-  db.public.registerFunction({
-    name: 'uuid_generate_v4',
-    returns: DataType.uuid,
-    implementation: () => randomUUID(),
-    impure: true,
-  });
+	// `@PrimaryGeneratedColumn('uuid')` defaults to uuid_generate_v4() on Postgres.
+	db.public.registerFunction({
+		name: 'uuid_generate_v4',
+		returns: DataType.uuid,
+		implementation: () => randomUUID(),
+		impure: true,
+	});
 
-  // Used by TypeORM's schema introspection during synchronize().
-  db.public.registerFunction({
-    name: 'quote_ident',
-    args: [DataType.text],
-    returns: DataType.text,
-    implementation: (value: string) => value,
-  });
-  db.public.registerFunction({
-    name: 'obj_description',
-    args: [DataType.regclass, DataType.text],
-    returns: DataType.text,
-    implementation: () => null,
-  });
+	// Used by TypeORM's schema introspection during synchronize().
+	db.public.registerFunction({
+		name: 'quote_ident',
+		args: [DataType.text],
+		returns: DataType.text,
+		implementation: (value: string) => value,
+	});
+	db.public.registerFunction({
+		name: 'obj_description',
+		args: [DataType.regclass, DataType.text],
+		returns: DataType.text,
+		implementation: () => null,
+	});
 
-  // pg-mem types the adapter result as `any`.
-  const dataSource = (await db.adapters.createTypeormDataSource({
-    type: 'postgres',
-    entities,
-    synchronize: false,
-  })) as DataSource;
+	// pg-mem types the adapter result as `any`.
+	const dataSource = (await db.adapters.createTypeormDataSource({
+		type: 'postgres',
+		entities,
+		synchronize: false,
+	})) as DataSource;
 
-  await dataSource.initialize();
-  await dataSource.synchronize();
+	await dataSource.initialize();
+	await dataSource.synchronize();
 
-  return dataSource;
+	return dataSource;
 }

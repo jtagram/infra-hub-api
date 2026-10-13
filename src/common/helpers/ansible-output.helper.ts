@@ -3,18 +3,16 @@
 // `=> {`. This pulls a single string field's value back out of that block
 // regardless of where in the wider ansible-playbook stdout it sits.
 function extractQuotedField(text: string, key: string): string | null {
-  const match = text.match(
-    new RegExp(`"${key}":\\s*"((?:\\\\.|[^"\\\\])*)"`),
-  );
-  if (!match) {
-    return null;
-  }
+	const match = text.match(new RegExp(`"${key}":\\s*"((?:\\\\.|[^"\\\\])*)"`));
+	if (!match) {
+		return null;
+	}
 
-  try {
-    return JSON.parse(`"${match[1]}"`) as string;
-  } catch {
-    return null;
-  }
+	try {
+		return JSON.parse(`"${match[1]}"`) as string;
+	} catch {
+		return null;
+	}
 }
 
 // ansible.builtin.command doesn't print its own stdout to the
@@ -22,7 +20,7 @@ function extractQuotedField(text: string, key: string): string | null {
 // real output back has to register it and echo it via ansible.builtin.debug,
 // which shows up as the task result's "msg" field.
 export function extractAnsibleDebugMessage(stdout: string): string | null {
-  return extractQuotedField(stdout, 'msg');
+	return extractQuotedField(stdout, 'msg');
 }
 
 // When the command task itself fails (non-zero exit), ansible reports the
@@ -32,5 +30,5 @@ export function extractAnsibleDebugMessage(stdout: string): string | null {
 // from AnsiblePlaybookExecutionError.stderr (which is ansible-playbook's own
 // stderr and is typically empty; ansible prints task failures to stdout).
 export function extractAnsibleFailureDetail(stdout: string): string | null {
-  return extractQuotedField(stdout, 'stderr') || extractQuotedField(stdout, 'msg');
+	return extractQuotedField(stdout, 'stderr') || extractQuotedField(stdout, 'msg');
 }

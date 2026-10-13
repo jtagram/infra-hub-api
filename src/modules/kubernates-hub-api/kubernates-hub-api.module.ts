@@ -4,8 +4,8 @@ import { KubernetesHubApiController } from './kubernates-hub-api.controller';
 import { KubernetesHubApiService } from './kubernates-hub-api.service';
 
 @Module({
-  imports: [AnsibleModule],
-  controllers: [KubernetesHubApiController],
-  providers: [KubernetesHubApiService],
+	imports: [AnsibleModule],
+	controllers: [KubernetesHubApiController],
+	providers: [KubernetesHubApiService],
 })
 export class KubernetesHubApiModule {}

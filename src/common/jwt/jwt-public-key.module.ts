@@ -3,7 +3,7 @@ import { JwtPublicKeyService } from './jwt-public-key.service';
 
 @Global()
 @Module({
-  providers: [JwtPublicKeyService],
-  exports: [JwtPublicKeyService],
+	providers: [JwtPublicKeyService],
+	exports: [JwtPublicKeyService],
 })
 export class JwtPublicKeyModule {}

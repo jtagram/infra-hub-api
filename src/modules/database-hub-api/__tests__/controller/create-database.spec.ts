@@ -11,75 +11,70 @@ import { prototypeMethod } from '../../../../../test/helpers/prototype-method';
 // @nestjs/typeorm and @nestjs/config are ESM-only and Jest runs as CommonJS.
 // The controller is built by hand, so the injection decorator can be a no-op.
 jest.mock('@nestjs/typeorm', () => ({
-  InjectRepository: () => () => undefined,
+	InjectRepository: () => () => undefined,
 }));
 jest.mock('@nestjs/config', () => ({ ConfigService: class ConfigService {} }));
 
 describe('DatabaseHubApiController.createDatabase', () => {
-  let service: {
-    createDatabase: jest.Mock<
-      (dto: CreateDatabaseDto) => Promise<OperationResult>
-    >;
-  };
-  let controller: DatabaseHubApiController;
-  const handler = prototypeMethod(DatabaseHubApiController.prototype, 'createDatabase');
-  const dto: CreateDatabaseDto = {
-    numberOfTickets: 6,
-    namespace: 'databases',
-    deployment: 'postgres',
-    dbName: 'new_db',
-  };
+	let service: {
+		createDatabase: jest.Mock<(dto: CreateDatabaseDto) => Promise<OperationResult>>;
+	};
+	let controller: DatabaseHubApiController;
+	const handler = prototypeMethod(DatabaseHubApiController.prototype, 'createDatabase');
+	const dto: CreateDatabaseDto = {
+		numberOfTickets: 6,
+		namespace: 'databases',
+		deployment: 'postgres',
+		dbName: 'new_db',
+	};
 
-  beforeEach(() => {
-    service = {
-      createDatabase:
-        jest.fn<(dto: CreateDatabaseDto) => Promise<OperationResult>>(),
-    };
-    controller = new DatabaseHubApiController(
-      service as unknown as DatabaseHubApiService,
-    );
-  });
+	beforeEach(() => {
+		service = {
+			createDatabase: jest.fn<(dto: CreateDatabaseDto) => Promise<OperationResult>>(),
+		};
+		controller = new DatabaseHubApiController(service as unknown as DatabaseHubApiService);
+	});
 
-  it('is mounted at POST /database-hub-api/create-database', () => {
-    expect(Reflect.getMetadata('path', handler)).toBe('create-database');
-    expect(Reflect.getMetadata('method', handler)).toBe(RequestMethod.POST);
-  });
+	it('is mounted at POST /database-hub-api/create-database', () => {
+		expect(Reflect.getMetadata('path', handler)).toBe('create-database');
+		expect(Reflect.getMetadata('method', handler)).toBe(RequestMethod.POST);
+	});
 
-  it('requires the ADMIN role', () => {
-    expect(Reflect.getMetadata(ROLES_KEY, handler)).toEqual([Role.ADMIN]);
-  });
+	it('requires the ADMIN role', () => {
+		expect(Reflect.getMetadata(ROLES_KEY, handler)).toEqual([Role.ADMIN]);
+	});
 
-  it('binds the body to CreateDatabaseDto', () => {
-    expect(
-      Reflect.getMetadata(
-        'design:paramtypes',
-        DatabaseHubApiController.prototype,
-        'createDatabase',
-      ),
-    ).toEqual([CreateDatabaseDto]);
-    const args = Reflect.getMetadata(
-      '__routeArguments__',
-      DatabaseHubApiController,
-      'createDatabase',
-    ) as Record<string, unknown>;
-    expect(Object.keys(args)).toEqual(['3:0']);
-  });
+	it('binds the body to CreateDatabaseDto', () => {
+		expect(
+			Reflect.getMetadata(
+				'design:paramtypes',
+				DatabaseHubApiController.prototype,
+				'createDatabase',
+			),
+		).toEqual([CreateDatabaseDto]);
+		const args = Reflect.getMetadata(
+			'__routeArguments__',
+			DatabaseHubApiController,
+			'createDatabase',
+		) as Record<string, unknown>;
+		expect(Object.keys(args)).toEqual(['3:0']);
+	});
 
-  it('delegates to the service and returns its result untouched', async () => {
-    const result = {
-      executionResult: { success: true, stdout: '', stderr: '', exitCode: 0 },
-      logId: 'log-2',
-    };
-    service.createDatabase.mockResolvedValue(result);
+	it('delegates to the service and returns its result untouched', async () => {
+		const result = {
+			executionResult: { success: true, stdout: '', stderr: '', exitCode: 0 },
+			logId: 'log-2',
+		};
+		service.createDatabase.mockResolvedValue(result);
 
-    await expect(controller.createDatabase(dto)).resolves.toBe(result);
+		await expect(controller.createDatabase(dto)).resolves.toBe(result);
 
-    expect(service.createDatabase).toHaveBeenCalledWith(dto);
-  });
+		expect(service.createDatabase).toHaveBeenCalledWith(dto);
+	});
 
-  it('propagates the service errors', async () => {
-    service.createDatabase.mockRejectedValue(new Error('nope'));
+	it('propagates the service errors', async () => {
+		service.createDatabase.mockRejectedValue(new Error('nope'));
 
-    await expect(controller.createDatabase(dto)).rejects.toThrow('nope');
-  });
+		await expect(controller.createDatabase(dto)).rejects.toThrow('nope');
+	});
 });

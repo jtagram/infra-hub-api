@@ -4,12 +4,12 @@ import { validate } from './env.validation';
 
 @Global()
 @Module({
-  imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-      validate,
-    }),
-  ],
-  exports: [ConfigModule],
+	imports: [
+		ConfigModule.forRoot({
+			isGlobal: true,
+			validate,
+		}),
+	],
+	exports: [ConfigModule],
 })
 export class EnvModule {}
