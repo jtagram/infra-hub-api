@@ -1,8 +1,9 @@
 // @ts-check
 import eslint from '@eslint/js';
+import { defineConfig } from 'eslint/config';
 import tseslint from 'typescript-eslint';
 
-export default tseslint.config(
+export default defineConfig(
 	{
 		// No analiza el propio archivo de configuración
 		ignores: ['eslint.config.mjs'],
