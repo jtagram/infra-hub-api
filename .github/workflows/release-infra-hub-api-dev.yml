@@ -106,6 +106,7 @@ jobs:
 
   quality:
     name: Verificar ESLint, Prettier y tests antes de publicar la imagen.
+    needs: validate
     runs-on: ubuntu-latest
     steps:
       - name: Clonar el repositorio para acceder al código.
