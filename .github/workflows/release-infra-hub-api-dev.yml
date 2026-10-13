@@ -104,9 +104,37 @@ jobs:
 
 
 
+  quality:
+    name: Verificar ESLint, Prettier y tests antes de publicar la imagen.
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clonar el repositorio para acceder al código.
+        uses: actions/checkout@v4
+
+      - name: Instalar Node.js con la misma versión que usa el Dockerfile.
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar las dependencias exactas del package-lock.json.
+        run: npm ci
+
+      - name: Verificar ESLint (solo lectura, no modifica archivos).
+        run: npm run lint
+
+      - name: Verificar Prettier (solo lectura, no modifica archivos).
+        run: npm run format:check
+
+      - name: Ejecutar los tests unitarios.
+        run: npm test
+
+      - name: Ejecutar los tests e2e.
+        run: npm run test:e2e
+
   build-and-push:
     name: Compilar y publicar la imagen infra-hub-api, y crear el tag de git.
-    needs: validate
+    needs: [validate, quality]
     runs-on: ubuntu-latest
     environment: dev
     permissions:
