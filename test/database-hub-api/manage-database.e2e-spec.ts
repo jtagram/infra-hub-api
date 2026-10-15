@@ -218,7 +218,7 @@ describe('POST /database-hub-api/manage-database (e2e)', () => {
 
 			expect(response.body).toEqual({
 				statusCode: 500,
-				message: 'Internal server error',
+				message: 'An unexpected error occurred. Please try again later.',
 			});
 			expect(testApp.process.calls).toHaveLength(1);
 			expect(await testApp.logRows()).toEqual([]);
@@ -238,7 +238,7 @@ describe('POST /database-hub-api/manage-database (e2e)', () => {
 
 				expect(response.body).toEqual({
 					statusCode: 500,
-					message: 'Internal server error',
+					message: 'An unexpected error occurred. Please try again later.',
 				});
 				expect(saveSpy).toHaveBeenCalledTimes(1);
 				// The side effect has already happened on the target host.
@@ -553,7 +553,7 @@ describe('POST /database-hub-api/manage-database (e2e)', () => {
 
 			expect(response.body).toEqual({
 				statusCode: 500,
-				message: 'Internal server error',
+				message: 'An unexpected error occurred. Please try again later.',
 			});
 			expect(testApp.process.calls).toEqual([]);
 			expect(await testApp.logRows()).toEqual([]);

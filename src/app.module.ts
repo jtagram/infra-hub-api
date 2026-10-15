@@ -6,6 +6,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { EnvModule } from './common/config/env.module';
 import { DatabaseModule } from './common/database/database.module';
+import { FilterModule } from './common/filter/filter.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { JwtPublicKeyModule } from './common/jwt/jwt-public-key.module';
@@ -22,6 +23,7 @@ const jwtModule = JwtModule.register({});
 	imports: [
 		EnvModule,
 		LoggerModule,
+		FilterModule,
 		ScheduleModule.forRoot(),
 		DatabaseModule,
 		jwtModule,

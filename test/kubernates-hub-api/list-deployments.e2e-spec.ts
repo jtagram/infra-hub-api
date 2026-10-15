@@ -202,7 +202,7 @@ describe('GET /kubernates-hub-api/list-deployments (e2e)', () => {
 
 			expect(response.body).toEqual({
 				statusCode: 500,
-				message: 'Internal server error',
+				message: 'An unexpected error occurred. Please try again later.',
 			});
 			// The temp playbook/SSH key are removed even when execution blows up
 			// (checked in afterEach through leftoverTempEntries).
@@ -368,7 +368,7 @@ describe('GET /kubernates-hub-api/list-deployments (e2e)', () => {
 
 			expect(response.body).toEqual({
 				statusCode: 500,
-				message: 'Internal server error',
+				message: 'An unexpected error occurred. Please try again later.',
 			});
 			expect(testApp.process.calls).toEqual([]);
 		});
