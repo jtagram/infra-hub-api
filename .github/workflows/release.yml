@@ -1,0 +1,302 @@
+name: Lanzamiento de infra-hub-api (reutilizable)
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: "Environment de GitHub de los jobs: dev o prod. Valor obligatorio."
+        required: true
+        type: string
+      approver_environment:
+        description: "Environment de GitHub que aprueba antes del deploy. Valor obligatorio."
+        required: true
+        type: string
+      deploy_workflow:
+        description: "Archivo del workflow de deploy en deploy-hub-api. Valor obligatorio."
+        required: true
+        type: string
+      deploy_ref:
+        description: "Rama de deploy-hub-api donde corre el workflow de deploy. Valor obligatorio."
+        required: true
+        type: string
+      previous_stable_tag:
+        description: "Tag que se mantiene como la última versión estable conocida. Valor obligatorio."
+        required: true
+        type: string
+      new_tag:
+        description: "Nuevo tag de versión para compilar, publicar y desplegar. Valor obligatorio."
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  ENVIRONMENT: ${{ inputs.environment }}
+  APPROVER_ENVIRONMENT: ${{ inputs.approver_environment }}
+  DEPLOY_WORKFLOW: ${{ inputs.deploy_workflow }}
+  DEPLOY_REF: ${{ inputs.deploy_ref }}
+  PREVIOUS_STABLE_TAG: ${{ inputs.previous_stable_tag }}
+  NEW_TAG: ${{ inputs.new_tag }}
+
+jobs:
+  validate-parameters:
+    name: Validar que ningún parámetro sea blanco antes de que se ejecute cualquier otra cosa.
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clonar el repositorio para acceder a los scripts.
+        uses: actions/checkout@v4
+
+      - name: Verificar que el parámetro environment no sea blanco.
+        run: .github/scripts/validar-parametro.sh environment "$ENVIRONMENT"
+
+      - name: Verificar que el parámetro approver_environment no sea blanco.
+        run: .github/scripts/validar-parametro.sh approver_environment "$APPROVER_ENVIRONMENT"
+
+      - name: Verificar que el parámetro deploy_workflow no sea blanco.
+        run: .github/scripts/validar-parametro.sh deploy_workflow "$DEPLOY_WORKFLOW"
+
+      - name: Verificar que el parámetro deploy_ref no sea blanco.
+        run: .github/scripts/validar-parametro.sh deploy_ref "$DEPLOY_REF"
+
+      - name: Verificar que el parámetro previous_stable_tag no sea blanco.
+        run: .github/scripts/validar-parametro.sh previous_stable_tag "$PREVIOUS_STABLE_TAG"
+
+      - name: Verificar que el parámetro new_tag no sea blanco.
+        run: .github/scripts/validar-parametro.sh new_tag "$NEW_TAG"
+
+  validate-secrets-and-tags:
+    name: Validar secrets y tags (git y Docker Hub) antes de compilar.
+    needs: validate-parameters
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - name: Clonar el repositorio para acceder al código, los scripts y los tags.
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Verificar que el secret DOCKERHUB_TOKEN esté definido.
+        env:
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: .github/scripts/validar-secreto.sh DOCKERHUB_TOKEN "$DOCKERHUB_TOKEN"
+
+      - name: Verificar que el secret DOCKERHUB_USERNAME esté definido.
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+        run: .github/scripts/validar-secreto.sh DOCKERHUB_USERNAME "$DOCKERHUB_USERNAME"
+
+      - name: Verificar que el secret INFRA_HUB_API_DISPATCH_TOKEN esté definido.
+        env:
+          INFRA_HUB_API_DISPATCH_TOKEN: ${{ secrets.INFRA_HUB_API_DISPATCH_TOKEN }}
+        run: .github/scripts/validar-secreto.sh INFRA_HUB_API_DISPATCH_TOKEN "$INFRA_HUB_API_DISPATCH_TOKEN"
+
+      - name: Validar que el input del tag estable anterior tenga el formato vNUMERO.NUMERO.NUMERO.
+        run: .github/scripts/validar-formato-de-tag.sh PREVIOUS_STABLE_TAG "$PREVIOUS_STABLE_TAG"
+
+      - name: Validar que el input del nuevo tag tenga el formato vNUMERO.NUMERO.NUMERO.
+        run: .github/scripts/validar-formato-de-tag.sh NEW_TAG "$NEW_TAG"
+
+      - name: Verificar que el tag estable anterior exista como tag de git.
+        run: .github/scripts/verificar-tag-existe.sh "$PREVIOUS_STABLE_TAG"
+
+      - name: Verificar que el nuevo tag no exista ya como tag de git.
+        run: .github/scripts/verificar-tag-no-existe.sh "$NEW_TAG"
+
+      - name: Construir el body de la solicitud de login para la Hub API de Docker Hub.
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          LOGIN_BODY="$(.github/scripts/construir-body-login-docker-hub.sh)"
+          echo "LOGIN_BODY=$LOGIN_BODY" >> "$GITHUB_ENV"
+
+      - name: Llamar al endpoint de login de la Hub API de Docker Hub.
+        run: |
+          HUB_API_TOKEN_SIN_VALIDAR="$(.github/scripts/llamar-login-docker-hub.sh "$LOGIN_BODY")"
+          echo "HUB_API_TOKEN_SIN_VALIDAR=$HUB_API_TOKEN_SIN_VALIDAR" >> "$GITHUB_ENV"
+
+      - name: Validar y enmascarar el token JWT devuelto por el login de la Hub API de Docker Hub, y guardarlo en el archivo GITHUB_ENV.
+        run: |
+          .github/scripts/validar-token-docker-hub.sh "$HUB_API_TOKEN_SIN_VALIDAR"
+          echo "::add-mask::$HUB_API_TOKEN_SIN_VALIDAR"
+          echo "HUB_API_TOKEN=$HUB_API_TOKEN_SIN_VALIDAR" >> "$GITHUB_ENV"
+
+      - name: Verificar que el tag estable anterior exista en Docker Hub.
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+        run: .github/scripts/verificar-tag-docker-hub-existe.sh infra-hub-api "$PREVIOUS_STABLE_TAG"
+
+      - name: Verificar que el nuevo tag no exista ya en Docker Hub.
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+        run: .github/scripts/verificar-tag-docker-hub-no-existe.sh infra-hub-api "$NEW_TAG"
+
+
+
+  quality:
+    name: Verificar ESLint, Prettier y tests antes de publicar la imagen.
+    needs: validate-secrets-and-tags
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clonar el repositorio para acceder al código.
+        uses: actions/checkout@v4
+
+      - name: Instalar Node.js con la misma versión que usa el Dockerfile.
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar las dependencias exactas del package-lock.json.
+        run: npm ci
+
+      - name: Verificar ESLint (solo lectura, no modifica archivos).
+        run: npm run lint
+
+      - name: Verificar Prettier (solo lectura, no modifica archivos).
+        run: npm run format:check
+
+      - name: Ejecutar los tests unitarios.
+        run: npm test
+
+      - name: Ejecutar los tests e2e.
+        run: npm run test:e2e
+
+  build-and-push:
+    name: Compilar y publicar la imagen infra-hub-api, y crear el tag de git.
+    needs: [validate-secrets-and-tags, quality]
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    permissions:
+      contents: write
+    steps:
+      - name: Clonar el repositorio para acceder al código y los scripts.
+        uses: actions/checkout@v4
+
+      - name: Iniciar sesión en Docker Hub.
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Compilar y publicar la imagen infra-hub-api en Docker Hub.
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/infra-hub-api:${{ inputs.new_tag }}
+
+      - name: Crear el tag de git y subirlo al repositorio.
+        run: .github/scripts/crear-tag-git.sh "$NEW_TAG"
+
+  gate:
+    name: "Aprobar: puerta de aprobación manual antes de desplegar infra-hub-api."
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.approver_environment }}
+    steps:
+      - name: Publicar un aviso de que la aprobación fue otorgada.
+        run: |
+          echo "::notice title=Aprobación otorgada::Este job no usa secrets, solo espera la aprobación de $APPROVER_ENVIRONMENT antes de disparar el deploy."
+
+  dispatch:
+    name: "Desplegar: para que deploy-hub-api despliegue infra-hub-api en microk8s."
+    needs: gate
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.environment }}
+      url: https://github.com/${{ github.repository_owner }}/deploy-hub-api/actions/workflows/${{ inputs.deploy_workflow }}
+    steps:
+      - name: Clonar el repositorio para acceder al código y los scripts.
+        uses: actions/checkout@v4
+
+      - name: Guardar la hora UTC actual antes de disparar el deploy de infra-hub-api.
+        run: echo "DISPATCH_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
+
+      - name: Habilitar workflow_dispatch en deploy-hub-api para desplegar la imagen infra-hub-api.
+        env:
+          GH_TOKEN: ${{ secrets.INFRA_HUB_API_DISPATCH_TOKEN }}
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
+          IMAGE_TAG: ${{ inputs.new_tag }}
+        run: .github/scripts/disparar-deploy-infra-hub-api.sh "$REPOSITORY_OWNER" "$IMAGE_TAG" "$DEPLOY_WORKFLOW" "$DEPLOY_REF"
+
+      - name: Publicar un aviso de que este job ahora depende de la ejecución de deploy de infra-hub-api.
+        env:
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
+        run: |
+          echo "::notice title=Este paso depende de deploy-hub-api::El deploy real corre en otro workflow, no acá. Seguilo en vivo y confirmá que termine bien: https://github.com/$REPOSITORY_OWNER/deploy-hub-api/actions/workflows/$DEPLOY_WORKFLOW"
+
+      - name: Escribir el link del deploy de infra-hub-api en GITHUB_STEP_SUMMARY.
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          IMAGE_TAG: ${{ inputs.new_tag }}
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
+        run: .github/scripts/renderizar-resumen-deploy-infra-hub-api.sh "$DOCKERHUB_USERNAME" "$IMAGE_TAG" "$REPOSITORY_OWNER" "$DEPLOY_WORKFLOW" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Esperar a que finalice la ejecución de deploy disparada en infra-hub-api.
+        env:
+          GH_TOKEN: ${{ secrets.INFRA_HUB_API_DISPATCH_TOKEN }}
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
+        run: .github/scripts/esperar-deploy-infra-hub-api.sh "$REPOSITORY_OWNER" "$DISPATCH_TIME" "$DEPLOY_WORKFLOW"
+
+  cleanup-tags:
+    name: Eliminar todos los tags de infra-hub-api en Docker Hub excepto los dos tags conservados.
+    needs: dispatch
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - name: Clonar el repositorio para acceder al código y los scripts.
+        uses: actions/checkout@v4
+
+      - name: Construir el cuerpo de la solicitud de login para la Hub API de Docker Hub.
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          LOGIN_BODY="$(.github/scripts/construir-body-login-docker-hub.sh)"
+          echo "LOGIN_BODY=$LOGIN_BODY" >> "$GITHUB_ENV"
+
+      - name: Llamar al endpoint de login de la Hub API de Docker Hub.
+        run: |
+          HUB_API_TOKEN_SIN_VALIDAR="$(.github/scripts/llamar-login-docker-hub.sh "$LOGIN_BODY")"
+          echo "HUB_API_TOKEN_SIN_VALIDAR=$HUB_API_TOKEN_SIN_VALIDAR" >> "$GITHUB_ENV"
+
+      - name: Validar y enmascarar el token JWT devuelto por el login de la Hub API de Docker Hub, y guardarlo en el archivo GITHUB_ENV.
+        run: |
+          .github/scripts/validar-token-docker-hub.sh "$HUB_API_TOKEN_SIN_VALIDAR"
+          echo "::add-mask::$HUB_API_TOKEN_SIN_VALIDAR"
+          echo "HUB_API_TOKEN=$HUB_API_TOKEN_SIN_VALIDAR" >> "$GITHUB_ENV"
+
+      - name: Listar todos los tags que existen hoy en el repositorio infra-hub-api en Docker Hub.
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+        run: .github/scripts/listar-tags-docker-hub.sh infra-hub-api > /tmp/all-tags.txt
+
+      - name: Guardar el tag estable anterior y el nuevo tag en el archivo de lista de conservación.
+        run: .github/scripts/filtrar-tags-a-conservar.sh /tmp/all-tags.txt "$PREVIOUS_STABLE_TAG" "$NEW_TAG" > /tmp/tags-to-keep.txt
+
+      - name: Guardar todos los tags excepto el tag estable anterior y el nuevo tag en el archivo de lista de eliminación.
+        run: .github/scripts/filtrar-tags-a-eliminar.sh /tmp/all-tags.txt "$PREVIOUS_STABLE_TAG" "$NEW_TAG" > /tmp/tags-to-delete.txt
+
+      - name: Eliminar todos los tags del archivo de lista de eliminación.
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+        run: .github/scripts/eliminar-tags-docker-hub.sh infra-hub-api /tmp/tags-to-delete.txt
+
+      - name: Escribir los tags conservados en GITHUB_STEP_SUMMARY.
+        run: .github/scripts/renderizar-resumen-tags-conservados-docker-hub.sh "$PREVIOUS_STABLE_TAG" "$NEW_TAG" /tmp/tags-to-keep.txt >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Escribir los tags eliminados en GITHUB_STEP_SUMMARY.
+        run: .github/scripts/renderizar-resumen-tags-eliminados.sh /tmp/tags-to-delete.txt >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Verificar que los dos tags conservados sigan existiendo en Docker Hub.
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+        run: .github/scripts/verificar-tags-conservados-docker-hub.sh infra-hub-api "$PREVIOUS_STABLE_TAG" "$NEW_TAG"
+
+      - name: Escribir el link de los tags de Docker Hub en GITHUB_STEP_SUMMARY.
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+        run: .github/scripts/renderizar-resumen-link-docker-hub.sh "$DOCKERHUB_USERNAME" >> "$GITHUB_STEP_SUMMARY"
