@@ -156,10 +156,13 @@ export async function createAppTestApp(): Promise<AppTestApp> {
 		const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
 		if (url === `${IAM_API_URL}/.well-known/jwks.json`) {
 			return Promise.resolve(
-				new Response(JSON.stringify({ keys: [{ ...jwk, kid: TEST_KEY_ID }] }), {
-					status: 200,
-					headers: { 'content-type': 'application/json' },
-				}),
+				new Response(
+					JSON.stringify({ ok: true, msg: 'ok', data: { keys: [{ ...jwk, kid: TEST_KEY_ID }] } }),
+					{
+						status: 200,
+						headers: { 'content-type': 'application/json' },
+					},
+				),
 			);
 		}
 		return Promise.reject(new Error(`Unexpected outbound HTTP call in e2e: ${url}`));

@@ -7,9 +7,11 @@ import { Logger } from 'nestjs-pino';
 /** One key of iam-api's `GET /.well-known/jwks.json` response. */
 type JwksKey = JsonWebKey & { kid?: string };
 
-/** Shape of iam-api's `GET /.well-known/jwks.json` response. */
+/** Shape of iam-api's `GET /.well-known/jwks.json` response: the usual envelope around the key set. */
 interface JwksResponse {
-	keys: JwksKey[];
+	ok?: boolean;
+	msg?: string;
+	data?: { keys?: JwksKey[] } | null;
 }
 
 const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
@@ -80,10 +82,18 @@ export class JwtPublicKeyService implements OnModuleInit {
 			throw new Error(`Failed to fetch JWT public keys from iam-api: HTTP ${response.status}`);
 		}
 
-		const body = (await response.json()) as Partial<JwksResponse>;
+		const body = (await response.json()) as JwksResponse | null;
+		const keys = body?.ok === true ? body.data?.keys : undefined;
+		if (!Array.isArray(keys)) {
+			throw new Error(
+				`Failed to fetch JWT public keys from iam-api: malformed JWKS envelope${
+					typeof body?.msg === 'string' ? ` (${body.msg})` : ''
+				}`,
+			);
+		}
 		const publicKeysByKid = new Map<string, string>();
 
-		for (const jwk of body?.keys ?? []) {
+		for (const jwk of keys) {
 			if (typeof jwk.kid === 'string' && jwk.kid.length > 0) {
 				publicKeysByKid.set(jwk.kid, toPem(jwk));
 			}

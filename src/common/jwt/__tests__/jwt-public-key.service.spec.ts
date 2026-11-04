@@ -19,6 +19,8 @@ const buildJwk = (kid?: string): JsonWebKey & { kid?: string } => {
 	return kid === undefined ? jwk : { ...jwk, kid };
 };
 
+const jwksEnvelope = (keys: unknown[]) => ({ ok: true, msg: 'ok', data: { keys } });
+
 const jwksResponse = (body: unknown, ok = true, status = 200) =>
 	({ ok, status, json: () => Promise.resolve(body) }) as unknown as Response;
 
@@ -48,7 +50,7 @@ describe('JwtPublicKeyService', () => {
 
 	describe('onModuleInit', () => {
 		it('fetches the JWKS from IAM_API_URL/.well-known/jwks.json', async () => {
-			fetchMock.mockResolvedValue(jwksResponse({ keys: [buildJwk('k1')] }));
+			fetchMock.mockResolvedValue(jwksResponse(jwksEnvelope([buildJwk('k1')])));
 
 			await service.onModuleInit();
 
@@ -58,7 +60,7 @@ describe('JwtPublicKeyService', () => {
 		});
 
 		it('stores every key with a kid as a PEM public key', async () => {
-			fetchMock.mockResolvedValue(jwksResponse({ keys: [buildJwk('k1'), buildJwk('k2')] }));
+			fetchMock.mockResolvedValue(jwksResponse(jwksEnvelope([buildJwk('k1'), buildJwk('k2')])));
 
 			await service.onModuleInit();
 
@@ -69,7 +71,7 @@ describe('JwtPublicKeyService', () => {
 
 		it('ignores keys without a kid and keeps the ones that have it', async () => {
 			fetchMock.mockResolvedValue(
-				jwksResponse({ keys: [buildJwk(), buildJwk(''), buildJwk('k1')] }),
+				jwksResponse(jwksEnvelope([buildJwk(), buildJwk(''), buildJwk('k1')])),
 			);
 
 			await service.onModuleInit();
@@ -92,32 +94,52 @@ describe('JwtPublicKeyService', () => {
 		});
 
 		it('fails the boot when the JWKS has no keys', async () => {
-			fetchMock.mockResolvedValue(jwksResponse({ keys: [] }));
+			fetchMock.mockResolvedValue(jwksResponse(jwksEnvelope([])));
 
 			await expect(service.onModuleInit()).rejects.toThrow(/no usable keys with a "kid"/);
 		});
 
 		it('fails the boot when the JWKS only has keys without kid', async () => {
-			fetchMock.mockResolvedValue(jwksResponse({ keys: [buildJwk()] }));
+			fetchMock.mockResolvedValue(jwksResponse(jwksEnvelope([buildJwk()])));
 
 			await expect(service.onModuleInit()).rejects.toThrow(/no usable keys with a "kid"/);
 		});
 
-		it('fails the boot when the response body has no "keys" property', async () => {
-			fetchMock.mockResolvedValue(jwksResponse({}));
+		it('fails the boot when the envelope has no "data.keys" property', async () => {
+			fetchMock.mockResolvedValue(jwksResponse({ ok: true, msg: 'ok', data: {} }));
 
-			await expect(service.onModuleInit()).rejects.toThrow(/no usable keys with a "kid"/);
+			await expect(service.onModuleInit()).rejects.toThrow(/malformed JWKS envelope/);
+		});
+
+		it('fails the boot on the pre-envelope bare { keys } shape', async () => {
+			fetchMock.mockResolvedValue(jwksResponse({ keys: [buildJwk('k1')] }));
+
+			await expect(service.onModuleInit()).rejects.toThrow(/malformed JWKS envelope/);
+		});
+
+		it('fails the boot when the envelope is ok:false, reporting its msg', async () => {
+			fetchMock.mockResolvedValue(jwksResponse({ ok: false, msg: 'no keys today', data: null }));
+
+			await expect(service.onModuleInit()).rejects.toThrow(
+				'malformed JWKS envelope (no keys today)',
+			);
+		});
+
+		it('fails the boot when "data.keys" is not an array', async () => {
+			fetchMock.mockResolvedValue(jwksResponse({ ok: true, msg: 'ok', data: { keys: 'x' } }));
+
+			await expect(service.onModuleInit()).rejects.toThrow(/malformed JWKS envelope/);
 		});
 
 		it('fails the boot when the response body is null', async () => {
 			fetchMock.mockResolvedValue(jwksResponse(null));
 
-			await expect(service.onModuleInit()).rejects.toThrow(/no usable keys with a "kid"/);
+			await expect(service.onModuleInit()).rejects.toThrow(/malformed JWKS envelope/);
 		});
 
 		it('fails the boot when a key is not a valid JWK', async () => {
 			fetchMock.mockResolvedValue(
-				jwksResponse({ keys: [{ kid: 'broken', kty: 'oct', k: 'c2VjcmV0' }] }),
+				jwksResponse(jwksEnvelope([{ kid: 'broken', kty: 'oct', k: 'c2VjcmV0' }])),
 			);
 
 			await expect(service.onModuleInit()).rejects.toThrow();
@@ -136,7 +158,7 @@ describe('JwtPublicKeyService', () => {
 
 	describe('getPublicKey', () => {
 		it('returns a known key without fetching again', async () => {
-			fetchMock.mockResolvedValue(jwksResponse({ keys: [buildJwk('k1')] }));
+			fetchMock.mockResolvedValue(jwksResponse(jwksEnvelope([buildJwk('k1')])));
 			await service.onModuleInit();
 			fetchMock.mockClear();
 			now += 10 * COOLDOWN_MS;
@@ -147,9 +169,9 @@ describe('JwtPublicKeyService', () => {
 		});
 
 		it('refreshes once and finds a key rotated in after the cooldown', async () => {
-			fetchMock.mockResolvedValueOnce(jwksResponse({ keys: [buildJwk('old')] }));
+			fetchMock.mockResolvedValueOnce(jwksResponse(jwksEnvelope([buildJwk('old')])));
 			await service.onModuleInit();
-			fetchMock.mockResolvedValueOnce(jwksResponse({ keys: [buildJwk('new')] }));
+			fetchMock.mockResolvedValueOnce(jwksResponse(jwksEnvelope([buildJwk('new')])));
 			now += COOLDOWN_MS;
 
 			await expect(service.getPublicKey('new')).resolves.toMatch(/BEGIN PUBLIC KEY/);
@@ -158,7 +180,7 @@ describe('JwtPublicKeyService', () => {
 		});
 
 		it('returns undefined for an unknown kid after refreshing', async () => {
-			fetchMock.mockResolvedValue(jwksResponse({ keys: [buildJwk('k1')] }));
+			fetchMock.mockResolvedValue(jwksResponse(jwksEnvelope([buildJwk('k1')])));
 			await service.onModuleInit();
 			now += COOLDOWN_MS;
 
@@ -168,7 +190,7 @@ describe('JwtPublicKeyService', () => {
 		});
 
 		it('does not hit iam-api again for unknown kids within the cooldown', async () => {
-			fetchMock.mockResolvedValue(jwksResponse({ keys: [buildJwk('k1')] }));
+			fetchMock.mockResolvedValue(jwksResponse(jwksEnvelope([buildJwk('k1')])));
 			await service.onModuleInit();
 			now += COOLDOWN_MS - 1;
 
@@ -179,7 +201,7 @@ describe('JwtPublicKeyService', () => {
 		});
 
 		it('restarts the cooldown after an unknown-kid refresh', async () => {
-			fetchMock.mockResolvedValue(jwksResponse({ keys: [buildJwk('k1')] }));
+			fetchMock.mockResolvedValue(jwksResponse(jwksEnvelope([buildJwk('k1')])));
 			await service.onModuleInit();
 			now += COOLDOWN_MS;
 			await service.getPublicKey('made-up');
@@ -191,7 +213,7 @@ describe('JwtPublicKeyService', () => {
 		});
 
 		it('keeps serving the previous keys when the unknown-kid refresh fails', async () => {
-			fetchMock.mockResolvedValueOnce(jwksResponse({ keys: [buildJwk('k1')] }));
+			fetchMock.mockResolvedValueOnce(jwksResponse(jwksEnvelope([buildJwk('k1')])));
 			await service.onModuleInit();
 			fetchMock.mockRejectedValueOnce(new Error('iam down'));
 			now += COOLDOWN_MS;
@@ -204,9 +226,9 @@ describe('JwtPublicKeyService', () => {
 
 	describe('refreshPublicKeys', () => {
 		it('replaces the previous keys with the new ones (rotated-out keys disappear)', async () => {
-			fetchMock.mockResolvedValueOnce(jwksResponse({ keys: [buildJwk('old')] }));
+			fetchMock.mockResolvedValueOnce(jwksResponse(jwksEnvelope([buildJwk('old')])));
 			await service.onModuleInit();
-			fetchMock.mockResolvedValueOnce(jwksResponse({ keys: [buildJwk('new')] }));
+			fetchMock.mockResolvedValueOnce(jwksResponse(jwksEnvelope([buildJwk('new')])));
 
 			await service.refreshPublicKeys();
 			now += 0;
@@ -216,7 +238,7 @@ describe('JwtPublicKeyService', () => {
 		});
 
 		it('logs the error and keeps the last known-good keys when the fetch fails', async () => {
-			fetchMock.mockResolvedValueOnce(jwksResponse({ keys: [buildJwk('k1')] }));
+			fetchMock.mockResolvedValueOnce(jwksResponse(jwksEnvelope([buildJwk('k1')])));
 			await service.onModuleInit();
 			fetchMock.mockRejectedValueOnce(new Error('network down'));
 
@@ -230,7 +252,7 @@ describe('JwtPublicKeyService', () => {
 		});
 
 		it('logs an HTTP failure and keeps the previous keys', async () => {
-			fetchMock.mockResolvedValueOnce(jwksResponse({ keys: [buildJwk('k1')] }));
+			fetchMock.mockResolvedValueOnce(jwksResponse(jwksEnvelope([buildJwk('k1')])));
 			await service.onModuleInit();
 			fetchMock.mockResolvedValueOnce(jwksResponse({}, false, 500));
 
@@ -247,9 +269,9 @@ describe('JwtPublicKeyService', () => {
 		});
 
 		it('keeps the previous keys when the new JWKS is empty', async () => {
-			fetchMock.mockResolvedValueOnce(jwksResponse({ keys: [buildJwk('k1')] }));
+			fetchMock.mockResolvedValueOnce(jwksResponse(jwksEnvelope([buildJwk('k1')])));
 			await service.onModuleInit();
-			fetchMock.mockResolvedValueOnce(jwksResponse({ keys: [] }));
+			fetchMock.mockResolvedValueOnce(jwksResponse(jwksEnvelope([])));
 
 			await service.refreshPublicKeys();
 
