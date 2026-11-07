@@ -95,8 +95,8 @@ describe('KubernetesHubApiService.manageKubernatesManifest (in-memory db)', () =
 		const result = await service.manageKubernatesManifest(dto);
 
 		const [log] = await repository.find();
-		expect(result.executionResult).toEqual(SUCCESS);
-		expect(result.logId).toBe(log.id);
+		expect(result.data?.executionResult).toEqual(SUCCESS);
+		expect(result.data?.logId).toBe(log.id);
 	});
 
 	it('logs and returns a failed execution too', async () => {
@@ -104,7 +104,7 @@ describe('KubernetesHubApiService.manageKubernatesManifest (in-memory db)', () =
 
 		const result = await service.manageKubernatesManifest(dto);
 
-		expect(result.executionResult).toEqual(FAILURE);
+		expect(result.data?.executionResult).toEqual(FAILURE);
 		expect(await repository.count()).toBe(1);
 	});
 

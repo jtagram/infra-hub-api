@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { RequestMethod } from '@nestjs/common';
 import { OperationResult } from '../../../../common/dto/operation-result.dto';
+import { ResponseBody } from '../../../../common/dto/response-body.dto';
 import { ROLES_KEY } from '../../../../common/guards/roles.decorator';
 import { Role } from '../../../../common/roles/role.enum';
 import { DatabaseHubApiController } from '../../database-hub-api.controller';
@@ -17,7 +18,7 @@ jest.mock('@nestjs/config', () => ({ ConfigService: class ConfigService {} }));
 
 describe('DatabaseHubApiController.manageDatabase', () => {
 	let service: {
-		manageDatabase: jest.Mock<(dto: ManageDatabaseDto) => Promise<OperationResult>>;
+		manageDatabase: jest.Mock<(dto: ManageDatabaseDto) => Promise<ResponseBody<OperationResult>>>;
 	};
 	let controller: DatabaseHubApiController;
 	const handler = prototypeMethod(DatabaseHubApiController.prototype, 'manageDatabase');
@@ -31,7 +32,7 @@ describe('DatabaseHubApiController.manageDatabase', () => {
 
 	beforeEach(() => {
 		service = {
-			manageDatabase: jest.fn<(dto: ManageDatabaseDto) => Promise<OperationResult>>(),
+			manageDatabase: jest.fn<(dto: ManageDatabaseDto) => Promise<ResponseBody<OperationResult>>>(),
 		};
 		controller = new DatabaseHubApiController(service as unknown as DatabaseHubApiService);
 	});
@@ -62,10 +63,10 @@ describe('DatabaseHubApiController.manageDatabase', () => {
 	});
 
 	it('delegates to the service and returns its result untouched', async () => {
-		const result = {
+		const result = ResponseBody.success('ok', {
 			executionResult: { success: true, stdout: '', stderr: '', exitCode: 0 },
 			logId: 'log-1',
-		};
+		} satisfies OperationResult);
 		service.manageDatabase.mockResolvedValue(result);
 
 		await expect(controller.manageDatabase(dto)).resolves.toBe(result);

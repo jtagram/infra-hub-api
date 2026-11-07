@@ -2,13 +2,15 @@ import { applyDecorators } from '@nestjs/common';
 import {
 	ApiBadGatewayResponse,
 	ApiBadRequestResponse,
-	ApiCreatedResponse,
-	ApiOkResponse,
 	ApiOperation,
 	ApiQuery,
 } from '@nestjs/swagger';
 import { OperationResult } from '../../../common/dto/operation-result.dto';
 import { ApiProtected } from '../../../common/swagger/api-protected.decorator';
+import {
+	ApiCreatedResponseBody,
+	ApiOkResponseBody,
+} from '../../../common/swagger/api-response-body.decorator';
 import { ListDeploymentsResponse } from '../kubernates-hub-api.dto';
 
 export const ApiListDeployments = () =>
@@ -25,9 +27,10 @@ export const ApiListDeployments = () =>
 			example: 'production',
 			required: true,
 		}),
-		ApiOkResponse({
+		ApiOkResponseBody({
 			description: 'Deployments found in the namespace.',
 			type: ListDeploymentsResponse,
+			msg: 'Deployments retrieved successfully',
 		}),
 		ApiBadRequestResponse({
 			description:
@@ -47,13 +50,14 @@ export const ApiManageManifest = () =>
 		ApiOperation({
 			summary: 'Apply, create or delete a manifest',
 			description:
-				'Runs `kubectl apply|create|delete` with a free-form manifest in a namespace, through an Ansible playbook, and stores an operation log entry. A failed playbook is not an HTTP error: it is reported in `executionResult` (`success: false`). Requires the `ADMIN` role in the infra-hub-api application.',
+				'Runs `kubectl apply|create|delete` with a free-form manifest in a namespace, through an Ansible playbook, and stores an operation log entry. A failed playbook is not an HTTP error: it is reported in `data.executionResult` (`success: false`) inside a successful envelope. Requires the `ADMIN` role in the infra-hub-api application.',
 		}),
 		ApiProtected(),
-		ApiCreatedResponse({
+		ApiCreatedResponseBody({
 			description:
-				'Operation executed and logged. Check `executionResult.success` for the Ansible outcome.',
+				'Operation executed and logged. `data.executionResult.success` carries the Ansible outcome.',
 			type: OperationResult,
+			msg: 'Kubernetes manifest operation executed',
 		}),
 		ApiBadRequestResponse({
 			description:
@@ -66,12 +70,14 @@ export const ApiExecuteKubectl = () =>
 		ApiOperation({
 			summary: 'Execute a kubectl command',
 			description:
-				'Runs a free-form `kubectl` command (arguments only, without the `kubectl` prefix) through an Ansible playbook and stores an operation log entry. The command output is free text in `executionResult.stdout`/`stderr`. A failed command is not an HTTP error: it is reported in `executionResult` (`success: false`). Requires the `ADMIN` role in the infra-hub-api application.',
+				'Runs a free-form `kubectl` command (arguments only, without the `kubectl` prefix) through an Ansible playbook and stores an operation log entry. The command output is free text in `executionResult.stdout`/`stderr`. A failed command is not an HTTP error: it is reported in `data.executionResult` (`success: false`) inside a successful envelope. Requires the `ADMIN` role in the infra-hub-api application.',
 		}),
 		ApiProtected(),
-		ApiCreatedResponse({
-			description: 'Command executed and logged. Check `executionResult.success` for the outcome.',
+		ApiCreatedResponseBody({
+			description:
+				'Command executed and logged. `data.executionResult.success` carries the outcome.',
 			type: OperationResult,
+			msg: 'Kubectl command executed',
 		}),
 		ApiBadRequestResponse({
 			description:

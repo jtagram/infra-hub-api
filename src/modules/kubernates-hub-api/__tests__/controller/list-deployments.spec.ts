@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { RequestMethod } from '@nestjs/common';
+import { ResponseBody } from '../../../../common/dto/response-body.dto';
 import { ROLES_KEY } from '../../../../common/guards/roles.decorator';
 import { Role } from '../../../../common/roles/role.enum';
 import { KubernetesHubApiController } from '../../kubernates-hub-api.controller';
@@ -54,23 +55,25 @@ describe('KubernetesHubApiController.listDeployments', () => {
 		expect(Object.keys(args)).toEqual(['4:0']);
 	});
 
-	it('delegates to the service and wraps the names in { deployments }', async () => {
-		service.listDeployments.mockResolvedValue(['api', 'web']);
+	it('delegates to the service and returns its envelope untouched', async () => {
+		service.listDeployments.mockResolvedValue(
+			ResponseBody.success('ok', { deployments: ['api', 'web'] }),
+		);
 		const dto = { namespace: 'default' };
 
-		await expect(controller.listDeployments(dto)).resolves.toEqual({
-			deployments: ['api', 'web'],
-		});
+		await expect(controller.listDeployments(dto)).resolves.toEqual(
+			ResponseBody.success('ok', { deployments: ['api', 'web'] }),
+		);
 
 		expect(service.listDeployments).toHaveBeenCalledWith(dto);
 	});
 
 	it('returns an empty list when the namespace has no deployments', async () => {
-		service.listDeployments.mockResolvedValue([]);
+		service.listDeployments.mockResolvedValue(ResponseBody.success('ok', { deployments: [] }));
 
-		await expect(controller.listDeployments({ namespace: 'x' })).resolves.toEqual({
-			deployments: [],
-		});
+		await expect(controller.listDeployments({ namespace: 'x' })).resolves.toEqual(
+			ResponseBody.success('ok', { deployments: [] }),
+		);
 	});
 
 	it('propagates the service errors', async () => {

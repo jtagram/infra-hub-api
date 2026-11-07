@@ -29,6 +29,10 @@ describe('buildLoggerOptions', () => {
 			'res.headers["set-cookie"]',
 			'req.body.password',
 			'req.body.access_token',
+			'req.body.sqlCode',
+			'req.body.manifest',
+			'req.body.playbook',
+			'req.body.kubectlCommand',
 			'err.parameters',
 		]);
 		expect(redact.censor).toBe('[REDACTED]');

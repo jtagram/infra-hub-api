@@ -2,12 +2,14 @@ import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from
 import { JwtService } from '@nestjs/jwt';
 import { Reflector } from '@nestjs/core';
 import { Request } from 'express';
+import { Logger } from 'nestjs-pino';
 import { AuthenticatedUser } from '../jwt/authenticated-user';
 import { JwtPublicKeyService } from '../jwt/jwt-public-key.service';
 import { IS_PUBLIC_KEY } from './public.decorator';
 
 const MISSING_TOKEN_MESSAGE = 'Missing or malformed bearer token';
 const INVALID_TOKEN_MESSAGE = 'Invalid or expired token';
+const VERIFY_FAILED_LOG_MESSAGE = 'Failed to verify JWT';
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
@@ -15,6 +17,7 @@ export class JwtAuthGuard implements CanActivate {
 		private readonly jwtService: JwtService,
 		private readonly reflector: Reflector,
 		private readonly jwtPublicKeyService: JwtPublicKeyService,
+		private readonly logger: Logger,
 	) {}
 
 	async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -37,7 +40,7 @@ export class JwtAuthGuard implements CanActivate {
 			throw new UnauthorizedException(INVALID_TOKEN_MESSAGE);
 		}
 
-		const payload = await verifyToken(this.jwtService, token, publicKey);
+		const payload = await this.verifyToken(token, publicKey);
 		if (!payload) {
 			throw new UnauthorizedException(INVALID_TOKEN_MESSAGE);
 		}
@@ -53,6 +56,23 @@ export class JwtAuthGuard implements CanActivate {
 		const kid = decoded?.header?.kid;
 		return kid ? this.jwtPublicKeyService.getPublicKey(kid) : undefined;
 	}
+
+	private async verifyToken(token: string, publicKey: string): Promise<AuthenticatedUser | null> {
+		try {
+			return await this.jwtService.verifyAsync<AuthenticatedUser>(token, {
+				publicKey,
+				algorithms: ['RS256'],
+			});
+		} catch (error) {
+			// Only the failure reason is logged: never the token itself.
+			this.logger.warn({
+				err: { message: error instanceof Error ? error.message : String(error) },
+				errorType: error instanceof Error ? error.constructor.name : typeof error,
+				msg: VERIFY_FAILED_LOG_MESSAGE,
+			});
+			return null;
+		}
+	}
 }
 
 function extractBearerToken(request: Request): string | undefined {
@@ -63,20 +83,4 @@ function extractBearerToken(request: Request): string | undefined {
 
 	const [type, token] = header.split(' ');
 	return type === 'Bearer' && token ? token : undefined;
-}
-
-async function verifyToken(
-	jwtService: JwtService,
-	token: string,
-	publicKey: string,
-): Promise<AuthenticatedUser | null> {
-	try {
-		return await jwtService.verifyAsync<AuthenticatedUser>(token, {
-			publicKey,
-			algorithms: ['RS256'],
-		});
-	} catch (error) {
-		console.error('Failed to verify JWT', error);
-		return null;
-	}
 }

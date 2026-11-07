@@ -4,10 +4,13 @@ import { Reflector } from '@nestjs/core';
 import { Request } from 'express';
 import { Role } from '../roles/role.enum';
 import { AuthenticatedUser } from '../jwt/authenticated-user';
+import { IS_PUBLIC_KEY } from './public.decorator';
 import { ROLES_KEY } from './roles.decorator';
 
 const MISSING_USER_MESSAGE =
 	'RolesGuard ran without an authenticated user - JwtAuthGuard must run first';
+const MISSING_ROLES_DECLARATION_MESSAGE =
+	'This route does not declare the roles allowed to access it';
 const WRONG_APPLICATION_MESSAGE = 'This token was not issued for the infra-hub-api application';
 const INSUFFICIENT_ROLE_MESSAGE = 'You do not have the required role';
 
@@ -18,6 +21,9 @@ const INSUFFICIENT_ROLE_MESSAGE = 'You do not have the required role';
  * otherwise an ADMIN of some unrelated app (e.g. "iam") would satisfy
  * `@Roles(Role.ADMIN)` here too, since role names collide across
  * applications by design.
+ *
+ * Deny by default: every non-public route must declare `@Roles()`, otherwise
+ * it is rejected.
  */
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -27,13 +33,21 @@ export class RolesGuard implements CanActivate {
 	) {}
 
 	canActivate(context: ExecutionContext): boolean {
+		const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+			context.getHandler(),
+			context.getClass(),
+		]);
+		if (isPublic) {
+			return true;
+		}
+
 		const requiredRoles = this.reflector.getAllAndOverride<Role[]>(ROLES_KEY, [
 			context.getHandler(),
 			context.getClass(),
 		]);
 
 		if (!requiredRoles || requiredRoles.length === 0) {
-			return true;
+			throw new ForbiddenException(MISSING_ROLES_DECLARATION_MESSAGE);
 		}
 
 		const request = context.switchToHttp().getRequest<Request & { user?: AuthenticatedUser }>();

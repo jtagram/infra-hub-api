@@ -137,7 +137,6 @@ function snapshotCall(command: string, args: string[], options: ExecFileOptions)
  *    runs with the test env, but nothing connects to Postgres);
  *  - global `fetch` for `${IAM_API_URL}/.well-known/jwks.json` -> JWKS built
  *    from the test public key (any other URL is rejected);
- *  - console.error is muted: JwtAuthGuard logs every rejected token with it.
  * process.env is set for the boot and restored on close().
  */
 export async function createAppTestApp(): Promise<AppTestApp> {
@@ -147,8 +146,6 @@ export async function createAppTestApp(): Promise<AppTestApp> {
 		previousEnv[key] = process.env[key];
 		process.env[key] = value;
 	}
-
-	const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined);
 
 	const publicKeyPem = (await publicKeyServiceStub.getPublicKey(TEST_KEY_ID))!;
 	const jwk = createPublicKey(publicKeyPem).export({ format: 'jwk' });
@@ -250,7 +247,6 @@ export async function createAppTestApp(): Promise<AppTestApp> {
 
 	const restore = () => {
 		fetchSpy.mockRestore();
-		consoleErrorSpy.mockRestore();
 		for (const [key, value] of Object.entries(previousEnv)) {
 			if (value === undefined) {
 				delete process.env[key];

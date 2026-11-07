@@ -1,5 +1,6 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { ResponseBody } from './common/dto/response-body.dto';
 import { AppService } from './app.service';
 import { Public } from './common/guards/public.decorator';
 import { ApiGetHello } from './swagger/app.swagger';
@@ -12,7 +13,7 @@ export class AppController {
 	@Get()
 	@Public()
 	@ApiGetHello()
-	getHello(): string {
+	getHello(): ResponseBody<string> {
 		return this.appService.getHello();
 	}
 }

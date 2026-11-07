@@ -2,13 +2,19 @@ import { BadGatewayException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { InfrastructureOperationsLogEntity } from '../../common/database/infrastructure-operatios-log.entity';
-import { OperationResult, OperationResultBuilder } from '../../common/dto/operation-result.dto';
+import { OperationResult } from '../../common/dto/operation-result.dto';
+import { ResponseBody } from '../../common/dto/response-body.dto';
 import {
 	extractAnsibleDebugMessage,
 	extractAnsibleFailureDetail,
 } from '../../common/helpers/ansible-output.helper';
 import { AnsibleService } from '../ansible/ansible.service';
-import { CreateDatabaseDto, ListDatabasesDto, ManageDatabaseDto } from './database-hub-api.dto';
+import {
+	CreateDatabaseDto,
+	ListDatabasesDto,
+	ListDatabasesResponse,
+	ManageDatabaseDto,
+} from './database-hub-api.dto';
 import { DatabaseHubApiMapper } from './database-hub-api.mapper';
 import {
 	buildCreateDatabasePlaybook,
@@ -26,7 +32,7 @@ export class DatabaseHubApiService {
 		private readonly operationsLogRepository: Repository<InfrastructureOperationsLogEntity>,
 	) {}
 
-	async listDatabases(dto: ListDatabasesDto): Promise<string[]> {
+	async listDatabases(dto: ListDatabasesDto): Promise<ResponseBody<ListDatabasesResponse>> {
 		const playbook = buildListDatabasesPlaybook(dto.namespace, dto.deployment);
 		const result = await this.ansibleService.execute(playbook);
 
@@ -44,13 +50,15 @@ export class DatabaseHubApiService {
 			throw new BadGatewayException(LIST_DATABASES_FAILED_MESSAGE);
 		}
 
-		return databaseNames
+		const databases = databaseNames
 			.split('\n')
 			.map((line) => line.trim())
 			.filter((line) => line.length > 0);
+
+		return DatabaseHubApiMapper.toListDatabasesResponse(databases);
 	}
 
-	async manageDatabase(dto: ManageDatabaseDto): Promise<OperationResult> {
+	async manageDatabase(dto: ManageDatabaseDto): Promise<ResponseBody<OperationResult>> {
 		const playbook = buildPostgresSqlPlaybook(DatabaseHubApiMapper.toPostgresSqlPlaybookInput(dto));
 
 		const result = await this.ansibleService.execute(playbook);
@@ -59,10 +67,10 @@ export class DatabaseHubApiService {
 			DatabaseHubApiMapper.toOperationsLogEntity(dto, result),
 		);
 
-		return new OperationResultBuilder().withExecutionResult(result).withLogId(log.id).build();
+		return DatabaseHubApiMapper.toManageDatabaseResponse(result, log.id);
 	}
 
-	async createDatabase(dto: CreateDatabaseDto): Promise<OperationResult> {
+	async createDatabase(dto: CreateDatabaseDto): Promise<ResponseBody<OperationResult>> {
 		const playbook = buildCreateDatabasePlaybook(dto.namespace, dto.deployment, dto.dbName);
 
 		const result = await this.ansibleService.execute(playbook);
@@ -71,6 +79,6 @@ export class DatabaseHubApiService {
 			DatabaseHubApiMapper.toCreateDatabaseOperationsLogEntity(dto, result),
 		);
 
-		return new OperationResultBuilder().withExecutionResult(result).withLogId(log.id).build();
+		return DatabaseHubApiMapper.toCreateDatabaseResponse(result, log.id);
 	}
 }

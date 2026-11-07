@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { RequestMethod } from '@nestjs/common';
 import { OperationResult } from '../../../../common/dto/operation-result.dto';
+import { ResponseBody } from '../../../../common/dto/response-body.dto';
 import { ROLES_KEY } from '../../../../common/guards/roles.decorator';
 import { Role } from '../../../../common/roles/role.enum';
 import { KubernetesHubApiController } from '../../kubernates-hub-api.controller';
@@ -64,10 +65,10 @@ describe('KubernetesHubApiController.manageKubernatesManifest', () => {
 	};
 
 	it('delegates to the service and returns its result untouched', async () => {
-		const result = {
+		const result = ResponseBody.success('ok', {
 			executionResult: { success: true, stdout: '', stderr: '', exitCode: 0 },
 			logId: 'log-1',
-		} satisfies OperationResult;
+		} satisfies OperationResult);
 		service.manageKubernatesManifest.mockResolvedValue(result);
 
 		await expect(controller.manageKubernatesManifest(dto)).resolves.toBe(result);

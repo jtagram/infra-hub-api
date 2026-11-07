@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals
 import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
+import { Logger } from 'nestjs-pino';
 import { JwtPublicKeyService } from '../../jwt/jwt-public-key.service';
 import { JwtAuthGuard } from '../jwt-auth.guard';
 import { IS_PUBLIC_KEY } from '../public.decorator';
@@ -24,6 +25,7 @@ describe('JwtAuthGuard', () => {
 	let publicKeyService: {
 		getPublicKey: jest.Mock<(...args: unknown[]) => Promise<unknown>>;
 	};
+	let logger: { warn: jest.Mock };
 	let guard: JwtAuthGuard;
 	let request: Record<string, unknown>;
 	let context: ExecutionContext;
@@ -48,10 +50,12 @@ describe('JwtAuthGuard', () => {
 		publicKeyService = {
 			getPublicKey: jest.fn<(...args: unknown[]) => Promise<unknown>>(),
 		};
+		logger = { warn: jest.fn() };
 		guard = new JwtAuthGuard(
 			jwtService as unknown as JwtService,
 			reflector as unknown as Reflector,
 			publicKeyService as unknown as JwtPublicKeyService,
+			logger as unknown as Logger,
 		);
 		context = buildContext({ authorization: 'Bearer the.jwt.token' });
 		jest.spyOn(console, 'error').mockImplementation(() => undefined);
@@ -194,13 +198,37 @@ describe('JwtAuthGuard', () => {
 			expect(request.user).toBeUndefined();
 		});
 
-		it('logs the verification failure to the console without leaking it to the client', async () => {
-			const failure = new Error('invalid signature');
-			jwtService.verifyAsync.mockRejectedValue(failure);
+		it('logs the verification failure with the pino logger without leaking it to the client', async () => {
+			jwtService.verifyAsync.mockRejectedValue(new Error('invalid signature'));
 
 			await expect(guard.canActivate(context)).rejects.toThrow(INVALID);
 
-			expect(console.error).toHaveBeenCalledWith('Failed to verify JWT', failure);
+			expect(logger.warn).toHaveBeenCalledWith({
+				err: { message: 'invalid signature' },
+				errorType: 'Error',
+				msg: 'Failed to verify JWT',
+			});
+			expect(console.error).not.toHaveBeenCalled();
+		});
+
+		it('never logs the token itself', async () => {
+			jwtService.verifyAsync.mockRejectedValue(new Error('jwt expired'));
+
+			await guard.canActivate(context).catch(() => undefined);
+
+			expect(JSON.stringify(logger.warn.mock.calls)).not.toContain('the.jwt.token');
+		});
+
+		it('logs a non-Error rejection by its string form', async () => {
+			jwtService.verifyAsync.mockRejectedValue('boom');
+
+			await guard.canActivate(context).catch(() => undefined);
+
+			expect(logger.warn).toHaveBeenCalledWith({
+				err: { message: 'boom' },
+				errorType: 'string',
+				msg: 'Failed to verify JWT',
+			});
 		});
 
 		it('propagates a failure of the public key service (it is not swallowed)', async () => {

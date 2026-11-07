@@ -1,6 +1,7 @@
 import { ArgumentsHost, Catch, ExceptionFilter, HttpStatus } from '@nestjs/common';
 import { Response } from 'express';
 import { Logger } from 'nestjs-pino';
+import { ResponseBody } from '../dto/response-body.dto';
 import { GENERIC_ERROR_MESSAGE } from './generic-error-message';
 
 @Catch()
@@ -21,9 +22,8 @@ export class UnknownExceptionFilter implements ExceptionFilter {
 			msg: 'Unhandled exception',
 		});
 
-		response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
-			statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-			message: GENERIC_ERROR_MESSAGE,
-		});
+		response
+			.status(HttpStatus.INTERNAL_SERVER_ERROR)
+			.json(ResponseBody.failure(GENERIC_ERROR_MESSAGE));
 	}
 }

@@ -15,7 +15,7 @@ import {
 	unknownKidAdminAuthorizationHeader,
 	wrongKeyAdminAuthorizationHeader,
 } from '../helpers/test-auth';
-import { bodyOf, ErrorBody } from '../helpers/response-types';
+import { bodyOf, ErrorBody, messagesOf } from '../helpers/response-types';
 
 const PSQL_AS_POSTGRES_USER_SCRIPT =
 	'if [ -z "$POSTGRES_USER" ]; then ' +
@@ -107,7 +107,11 @@ describe('GET /database-hub-api/list-databases (e2e)', () => {
 			const response = await get().expect(200);
 
 			expect(response.body).toEqual({
-				databases: ['postgres', 'appdb', 'analytics'],
+				ok: true,
+				msg: 'Databases retrieved successfully',
+				data: {
+					databases: ['postgres', 'appdb', 'analytics'],
+				},
 			});
 		});
 
@@ -116,7 +120,11 @@ describe('GET /database-hub-api/list-databases (e2e)', () => {
 
 			const response = await get().expect(200);
 
-			expect(response.body).toEqual({ databases: ['postgres', 'appdb'] });
+			expect(response.body).toEqual({
+				ok: true,
+				msg: 'Databases retrieved successfully',
+				data: { databases: ['postgres', 'appdb'] },
+			});
 		});
 
 		it('returns an empty list when psql printed nothing', async () => {
@@ -124,7 +132,11 @@ describe('GET /database-hub-api/list-databases (e2e)', () => {
 
 			const response = await get().expect(200);
 
-			expect(response.body).toEqual({ databases: [] });
+			expect(response.body).toEqual({
+				ok: true,
+				msg: 'Databases retrieved successfully',
+				data: { databases: [] },
+			});
 		});
 
 		it('hands ansible-playbook the exact args, timeout, playbook and SSH key', async () => {
@@ -165,10 +177,9 @@ describe('GET /database-hub-api/list-databases (e2e)', () => {
 			}).expect(502);
 
 			expect(response.body).toEqual({
-				statusCode: 502,
-				error: 'Bad Gateway',
-				message:
-					'Failed to list databases: Error from server (NotFound): deployments.apps "ghost" not found',
+				ok: false,
+				msg: 'Failed to list databases: Error from server (NotFound): deployments.apps "ghost" not found',
+				data: null,
 			});
 		});
 
@@ -181,7 +192,7 @@ describe('GET /database-hub-api/list-databases (e2e)', () => {
 
 			const response = await get().expect(502);
 
-			expect(bodyOf<ErrorBody>(response).message).toBe(
+			expect(bodyOf<ErrorBody>(response).msg).toBe(
 				'Failed to list databases: Failed to connect to the host via ssh',
 			);
 		});
@@ -194,7 +205,7 @@ describe('GET /database-hub-api/list-databases (e2e)', () => {
 
 			const response = await get().expect(502);
 
-			expect(bodyOf<ErrorBody>(response).message).toBe(
+			expect(bodyOf<ErrorBody>(response).msg).toBe(
 				'Failed to list databases: Command failed: ansible-playbook (timed out)',
 			);
 		});
@@ -204,11 +215,7 @@ describe('GET /database-hub-api/list-databases (e2e)', () => {
 
 			const response = await get().expect(502);
 
-			expect(response.body).toEqual({
-				statusCode: 502,
-				error: 'Bad Gateway',
-				message: 'Failed to list databases',
-			});
+			expect(response.body).toEqual({ ok: false, msg: 'Failed to list databases', data: null });
 		});
 
 		it('documents current behavior: a non-ExecFileError from the exec layer becomes a 500', async () => {
@@ -217,8 +224,9 @@ describe('GET /database-hub-api/list-databases (e2e)', () => {
 			const response = await get().expect(500);
 
 			expect(response.body).toEqual({
-				statusCode: 500,
-				message: 'An unexpected error occurred. Please try again later.',
+				ok: false,
+				msg: 'An unexpected error occurred. Please try again later.',
+				data: null,
 			});
 			expect(testApp.process.calls).toHaveLength(1);
 		});
@@ -228,7 +236,7 @@ describe('GET /database-hub-api/list-databases (e2e)', () => {
 		it('returns 400 when both query parameters are missing', async () => {
 			const response = await get({}).expect(400);
 
-			expect(bodyOf<ErrorBody>(response).message).toEqual(
+			expect(messagesOf(response)).toEqual(
 				expect.arrayContaining([
 					'namespace should not be empty',
 					'namespace must be a string',
@@ -242,39 +250,33 @@ describe('GET /database-hub-api/list-databases (e2e)', () => {
 		it('returns 400 when namespace is missing', async () => {
 			const response = await get({ deployment: 'postgres' }).expect(400);
 
-			expect(bodyOf<ErrorBody>(response).message).toEqual(
-				expect.arrayContaining(['namespace must be a string']),
-			);
+			expect(messagesOf(response)).toEqual(expect.arrayContaining(['namespace must be a string']));
 			expect(testApp.process.calls).toEqual([]);
 		});
 
 		it('returns 400 when deployment is missing', async () => {
 			const response = await get({ namespace: 'databases' }).expect(400);
 
-			expect(bodyOf<ErrorBody>(response).message).toEqual(
-				expect.arrayContaining(['deployment must be a string']),
-			);
+			expect(messagesOf(response)).toEqual(expect.arrayContaining(['deployment must be a string']));
 			expect(testApp.process.calls).toEqual([]);
 		});
 
 		it('returns 400 when namespace is empty', async () => {
 			const response = await get('namespace=&deployment=postgres').expect(400);
 
-			expect(bodyOf<ErrorBody>(response).message).toEqual(['namespace should not be empty']);
+			expect(messagesOf(response)).toEqual(['namespace should not be empty']);
 		});
 
 		it('returns 400 when deployment is empty', async () => {
 			const response = await get('namespace=databases&deployment=').expect(400);
 
-			expect(bodyOf<ErrorBody>(response).message).toEqual(['deployment should not be empty']);
+			expect(messagesOf(response)).toEqual(['deployment should not be empty']);
 		});
 
 		it('returns 400 when deployment is repeated (array instead of string)', async () => {
 			const response = await get('namespace=databases&deployment=a&deployment=b').expect(400);
 
-			expect(bodyOf<ErrorBody>(response).message).toEqual(
-				expect.arrayContaining(['deployment must be a string']),
-			);
+			expect(messagesOf(response)).toEqual(expect.arrayContaining(['deployment must be a string']));
 			expect(testApp.process.calls).toEqual([]);
 		});
 
@@ -284,7 +286,7 @@ describe('GET /database-hub-api/list-databases (e2e)', () => {
 				deployment: 'postgres',
 			}).expect(400);
 
-			expect(bodyOf<ErrorBody>(response).message).toEqual([
+			expect(messagesOf(response)).toEqual([
 				'namespace must be shorter than or equal to 63 characters',
 			]);
 		});
@@ -295,7 +297,7 @@ describe('GET /database-hub-api/list-databases (e2e)', () => {
 				deployment: 'a'.repeat(64),
 			}).expect(400);
 
-			expect(bodyOf<ErrorBody>(response).message).toEqual([
+			expect(messagesOf(response)).toEqual([
 				'deployment must be shorter than or equal to 63 characters',
 			]);
 		});
@@ -314,7 +316,7 @@ describe('GET /database-hub-api/list-databases (e2e)', () => {
 		it('returns 400 on an unknown query property', async () => {
 			const response = await get({ ...DEFAULT_QUERY, dbName: 'x' }).expect(400);
 
-			expect(bodyOf<ErrorBody>(response).message).toEqual(['property dbName should not exist']);
+			expect(messagesOf(response)).toEqual(['property dbName should not exist']);
 			expect(testApp.process.calls).toEqual([]);
 		});
 	});
@@ -323,37 +325,37 @@ describe('GET /database-hub-api/list-databases (e2e)', () => {
 		it('returns 401 when the request has no bearer token', async () => {
 			const response = await get(undefined, null).expect(401);
 
-			expect(bodyOf<ErrorBody>(response).message).toBe('Missing or malformed bearer token');
+			expect(bodyOf<ErrorBody>(response).msg).toBe('Missing or malformed bearer token');
 		});
 
 		it('returns 401 for a non-bearer authorization scheme', async () => {
 			const response = await get(undefined, 'Basic YWRtaW46YWRtaW4=').expect(401);
 
-			expect(bodyOf<ErrorBody>(response).message).toBe('Missing or malformed bearer token');
+			expect(bodyOf<ErrorBody>(response).msg).toBe('Missing or malformed bearer token');
 		});
 
 		it('returns 401 for a garbage token', async () => {
 			const response = await get(undefined, 'Bearer not-a-jwt').expect(401);
 
-			expect(bodyOf<ErrorBody>(response).message).toBe('Invalid or expired token');
+			expect(bodyOf<ErrorBody>(response).msg).toBe('Invalid or expired token');
 		});
 
 		it('returns 401 for an expired token', async () => {
 			const response = await get(undefined, expiredAdminAuthorizationHeader()).expect(401);
 
-			expect(bodyOf<ErrorBody>(response).message).toBe('Invalid or expired token');
+			expect(bodyOf<ErrorBody>(response).msg).toBe('Invalid or expired token');
 		});
 
 		it('returns 401 for a token signed with the wrong key', async () => {
 			const response = await get(undefined, wrongKeyAdminAuthorizationHeader()).expect(401);
 
-			expect(bodyOf<ErrorBody>(response).message).toBe('Invalid or expired token');
+			expect(bodyOf<ErrorBody>(response).msg).toBe('Invalid or expired token');
 		});
 
 		it('returns 401 for a token with an unknown kid', async () => {
 			const response = await get(undefined, unknownKidAdminAuthorizationHeader()).expect(401);
 
-			expect(bodyOf<ErrorBody>(response).message).toBe('Invalid or expired token');
+			expect(bodyOf<ErrorBody>(response).msg).toBe('Invalid or expired token');
 		});
 
 		it('authenticates before validating: an invalid payload without token is a 401', async () => {
@@ -379,7 +381,7 @@ describe('GET /database-hub-api/list-databases (e2e)', () => {
 				}),
 			).expect(403);
 
-			expect(bodyOf<ErrorBody>(response).message).toBe('You do not have the required role');
+			expect(bodyOf<ErrorBody>(response).msg).toBe('You do not have the required role');
 			expect(testApp.process.calls).toEqual([]);
 			expect(await testApp.logRows()).toEqual([]);
 		});
@@ -407,7 +409,7 @@ describe('GET /database-hub-api/list-databases (e2e)', () => {
 				}),
 			).expect(403);
 
-			expect(bodyOf<ErrorBody>(response).message).toBe(
+			expect(bodyOf<ErrorBody>(response).msg).toBe(
 				'This token was not issued for the infra-hub-api application',
 			);
 			expect(testApp.process.calls).toEqual([]);
@@ -421,8 +423,9 @@ describe('GET /database-hub-api/list-databases (e2e)', () => {
 			).expect(500);
 
 			expect(response.body).toEqual({
-				statusCode: 500,
-				message: 'An unexpected error occurred. Please try again later.',
+				ok: false,
+				msg: 'An unexpected error occurred. Please try again later.',
+				data: null,
 			});
 			expect(testApp.process.calls).toEqual([]);
 			expect(await testApp.logRows()).toEqual([]);
@@ -436,7 +439,7 @@ describe('GET /database-hub-api/list-databases (e2e)', () => {
 				}),
 			).expect(500);
 
-			expect(bodyOf<ErrorBody>(response).statusCode).toBe(500);
+			expect(bodyOf<ErrorBody>(response).ok).toBe(false);
 			expect(testApp.process.calls).toEqual([]);
 		});
 	});

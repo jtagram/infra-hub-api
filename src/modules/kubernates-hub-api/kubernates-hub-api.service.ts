@@ -2,7 +2,8 @@ import { BadGatewayException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { InfrastructureOperationsLogEntity } from '../../common/database/infrastructure-operatios-log.entity';
-import { OperationResult, OperationResultBuilder } from '../../common/dto/operation-result.dto';
+import { OperationResult } from '../../common/dto/operation-result.dto';
+import { ResponseBody } from '../../common/dto/response-body.dto';
 import {
 	extractAnsibleDebugMessage,
 	extractAnsibleFailureDetail,
@@ -11,6 +12,7 @@ import { AnsibleService } from '../ansible/ansible.service';
 import {
 	ExecuteKubectlCommandDto,
 	ListDeploymentsDto,
+	ListDeploymentsResponse,
 	ManageKubernetesDto,
 } from './kubernates-hub-api.dto';
 import { KubernetesHubApiMapper } from './kubernates-hub-api.mapper';
@@ -30,7 +32,7 @@ export class KubernetesHubApiService {
 		private readonly operationsLogRepository: Repository<InfrastructureOperationsLogEntity>,
 	) {}
 
-	async manageKubernatesManifest(dto: ManageKubernetesDto): Promise<OperationResult> {
+	async manageKubernatesManifest(dto: ManageKubernetesDto): Promise<ResponseBody<OperationResult>> {
 		const playbook = buildKubernetesManifestPlaybook(
 			KubernetesHubApiMapper.toKubernetesManifestPlaybookInput(dto),
 		);
@@ -41,10 +43,10 @@ export class KubernetesHubApiService {
 			KubernetesHubApiMapper.toOperationsLogEntity(dto, result),
 		);
 
-		return new OperationResultBuilder().withExecutionResult(result).withLogId(log.id).build();
+		return KubernetesHubApiMapper.toManageManifestResponse(result, log.id);
 	}
 
-	async listDeployments(dto: ListDeploymentsDto): Promise<string[]> {
+	async listDeployments(dto: ListDeploymentsDto): Promise<ResponseBody<ListDeploymentsResponse>> {
 		const playbook = buildListDeploymentsPlaybook(dto.namespace);
 		const result = await this.ansibleService.execute(playbook);
 
@@ -62,13 +64,17 @@ export class KubernetesHubApiService {
 			throw new BadGatewayException(LIST_DEPLOYMENTS_FAILED_MESSAGE);
 		}
 
-		return deploymentNames
+		const deployments = deploymentNames
 			.trim()
 			.split(/\s+/)
 			.filter((name) => name.length > 0);
+
+		return KubernetesHubApiMapper.toListDeploymentsResponse(deployments);
 	}
 
-	async executeKubectlCommand(dto: ExecuteKubectlCommandDto): Promise<OperationResult> {
+	async executeKubectlCommand(
+		dto: ExecuteKubectlCommandDto,
+	): Promise<ResponseBody<OperationResult>> {
 		const playbook = buildKubectlCommandPlaybook(
 			KubernetesHubApiMapper.toKubectlCommandPlaybookInput(dto),
 		);
@@ -79,6 +85,6 @@ export class KubernetesHubApiService {
 			KubernetesHubApiMapper.toKubectlCommandOperationsLogEntity(dto, result),
 		);
 
-		return new OperationResultBuilder().withExecutionResult(result).withLogId(log.id).build();
+		return KubernetesHubApiMapper.toKubectlCommandResponse(result, log.id);
 	}
 }

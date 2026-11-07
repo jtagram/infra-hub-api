@@ -7,7 +7,7 @@ import {
 	authorizationHeaderFor,
 	hs256ConfusionAdminAuthorizationHeader,
 } from './helpers/test-auth';
-import { bodyOf, ErrorBody } from './helpers/response-types';
+import { bodyOf, dataOf, ErrorBody, messagesOf } from './helpers/response-types';
 import { OperationResult } from '../src/common/dto/operation-result.dto';
 
 // Smoke suite: the REAL AppModule (see helpers/app-test-app.ts for what is
@@ -38,15 +38,21 @@ describe('AppModule (e2e smoke)', () => {
 	it('GET / returns Hello World without a token (public route)', async () => {
 		const response = await testApp.http().get('/').expect(200);
 
-		expect(response.text).toBe('Hello World!');
+		expect(response.body).toEqual({ ok: true, msg: 'Service is running', data: 'Hello World!' });
 	});
 
-	it('returns 404 for an unknown route', async () => {
-		await testApp
+	it('returns 404 with the failure envelope for an unknown route', async () => {
+		const response = await testApp
 			.http()
 			.get('/does-not-exist')
 			.set('Authorization', ADMIN_AUTHORIZATION)
 			.expect(404);
+
+		expect(response.body).toEqual({
+			ok: false,
+			msg: 'Cannot GET /does-not-exist',
+			data: null,
+		});
 	});
 
 	it('returns 401 on a protected route without a token', async () => {
@@ -56,7 +62,7 @@ describe('AppModule (e2e smoke)', () => {
 			.query({ namespace: 'payments' })
 			.expect(401);
 
-		expect(bodyOf<ErrorBody>(response).message).toBe('Missing or malformed bearer token');
+		expect(bodyOf<ErrorBody>(response).msg).toBe('Missing or malformed bearer token');
 		expect(testApp.process.calls).toEqual([]);
 	});
 
@@ -68,7 +74,7 @@ describe('AppModule (e2e smoke)', () => {
 			.set('Authorization', hs256ConfusionAdminAuthorizationHeader())
 			.expect(401);
 
-		expect(bodyOf<ErrorBody>(response).message).toBe('Invalid or expired token');
+		expect(bodyOf<ErrorBody>(response).msg).toBe('Invalid or expired token');
 		expect(testApp.process.calls).toEqual([]);
 	});
 
@@ -97,7 +103,7 @@ describe('AppModule (e2e smoke)', () => {
 			.set('Authorization', ADMIN_AUTHORIZATION)
 			.expect(400);
 
-		expect(bodyOf<ErrorBody>(response).message).toEqual(['property extra should not exist']);
+		expect(messagesOf(response)).toEqual(['property extra should not exist']);
 		expect(testApp.process.calls).toEqual([]);
 	});
 
@@ -111,7 +117,11 @@ describe('AppModule (e2e smoke)', () => {
 			.set('Authorization', ADMIN_AUTHORIZATION)
 			.expect(200);
 
-		expect(response.body).toEqual({ deployments: ['api', 'worker'] });
+		expect(response.body).toEqual({
+			ok: true,
+			msg: 'Deployments retrieved successfully',
+			data: { deployments: ['api', 'worker'] },
+		});
 		expect(testApp.process.calls).toHaveLength(1);
 		expect(testApp.process.calls[0].command).toBe('ansible-playbook');
 	});
@@ -128,7 +138,7 @@ describe('AppModule (e2e smoke)', () => {
 
 		const rows = await testApp.logRows();
 		expect(rows).toHaveLength(1);
-		expect(rows[0].id).toBe(bodyOf<OperationResult>(response).logId);
+		expect(rows[0].id).toBe(dataOf<OperationResult>(response).logId);
 		expect(rows[0].department).toBe(InfrastructureDepartment.SERVER);
 		expect(rows[0].numberOfTicket).toBe(7);
 		expect(testApp.process.calls).toHaveLength(1);

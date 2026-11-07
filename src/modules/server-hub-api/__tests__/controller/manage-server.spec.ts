@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { RequestMethod } from '@nestjs/common';
 import { OperationResult } from '../../../../common/dto/operation-result.dto';
+import { ResponseBody } from '../../../../common/dto/response-body.dto';
 import { ROLES_KEY } from '../../../../common/guards/roles.decorator';
 import { Role } from '../../../../common/roles/role.enum';
 import { ServerHubApiController } from '../../server-hub-api.controller';
@@ -17,7 +18,7 @@ jest.mock('@nestjs/config', () => ({ ConfigService: class ConfigService {} }));
 
 describe('ServerHubApiController.manageServer', () => {
 	let service: {
-		manageServer: jest.Mock<(dto: ManageServerDto) => Promise<OperationResult>>;
+		manageServer: jest.Mock<(dto: ManageServerDto) => Promise<ResponseBody<OperationResult>>>;
 	};
 	let controller: ServerHubApiController;
 	const handler = prototypeMethod(ServerHubApiController.prototype, 'manageServer');
@@ -28,7 +29,7 @@ describe('ServerHubApiController.manageServer', () => {
 
 	beforeEach(() => {
 		service = {
-			manageServer: jest.fn<(dto: ManageServerDto) => Promise<OperationResult>>(),
+			manageServer: jest.fn<(dto: ManageServerDto) => Promise<ResponseBody<OperationResult>>>(),
 		};
 		controller = new ServerHubApiController(service as unknown as ServerHubApiService);
 	});
@@ -56,10 +57,10 @@ describe('ServerHubApiController.manageServer', () => {
 	});
 
 	it('delegates to the service and returns its result untouched', async () => {
-		const result = {
+		const result = ResponseBody.success('ok', {
 			executionResult: { success: true, stdout: '', stderr: '', exitCode: 0 },
 			logId: 'log-1',
-		};
+		} satisfies OperationResult);
 		service.manageServer.mockResolvedValue(result);
 
 		await expect(controller.manageServer(dto)).resolves.toBe(result);

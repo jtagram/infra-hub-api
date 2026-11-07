@@ -6,10 +6,18 @@ export const ApiGetHello = () =>
 		ApiOperation({
 			summary: 'Health greeting',
 			description:
-				'Public endpoint that returns a plain-text greeting. It requires no authentication.',
+				'Public endpoint that returns a greeting wrapped in the standard response envelope. It requires no authentication.',
 		}),
 		ApiOkResponse({
-			description: 'Plain-text greeting.',
-			schema: { type: 'string', example: 'Hello World!' },
+			description: 'Greeting wrapped in the `{ ok, msg, data }` envelope.',
+			schema: {
+				type: 'object',
+				required: ['ok', 'msg', 'data'],
+				properties: {
+					ok: { type: 'boolean', example: true },
+					msg: { type: 'string', example: 'Service is running' },
+					data: { type: 'string', example: 'Hello World!' },
+				},
+			},
 		}),
 	);

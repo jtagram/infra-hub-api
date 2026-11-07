@@ -1,6 +1,7 @@
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException } from '@nestjs/common';
 import { Response } from 'express';
 import { Logger } from 'nestjs-pino';
+import { ResponseBody } from '../dto/response-body.dto';
 
 @Catch(HttpException)
 export class HttpExceptionFilter implements ExceptionFilter {
@@ -23,6 +24,17 @@ export class HttpExceptionFilter implements ExceptionFilter {
 			msg: 'HTTP exception',
 		});
 
-		response.status(status).json(exception.getResponse());
+		response.status(status).json(ResponseBody.failure(this.messageOf(exception)));
+	}
+
+	/** Extracts a plain string message; validation arrays are joined with ', '. */
+	private messageOf(exception: HttpException): string {
+		const body = exception.getResponse();
+		const message = typeof body === 'string' ? body : (body as { message?: unknown }).message;
+
+		if (Array.isArray(message)) {
+			return message.join(', ');
+		}
+		return typeof message === 'string' ? message : exception.message;
 	}
 }

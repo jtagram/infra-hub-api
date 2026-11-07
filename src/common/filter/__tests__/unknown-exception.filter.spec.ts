@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { ArgumentsHost } from '@nestjs/common';
 import { Logger } from 'nestjs-pino';
 import { GENERIC_ERROR_MESSAGE } from '../generic-error-message';
+import { ResponseBody } from '../../dto/response-body.dto';
 import { UnknownExceptionFilter } from '../unknown-exception.filter';
 
 describe('UnknownExceptionFilter', () => {
@@ -25,10 +26,8 @@ describe('UnknownExceptionFilter', () => {
 		filter.catch(new Error('secret internal detail'), host);
 
 		expect(status).toHaveBeenCalledWith(500);
-		expect(json).toHaveBeenCalledWith({
-			statusCode: 500,
-			message: GENERIC_ERROR_MESSAGE,
-		});
+		expect(json).toHaveBeenCalledWith(ResponseBody.failure(GENERIC_ERROR_MESSAGE));
+		expect(json).toHaveBeenCalledWith({ ok: false, msg: GENERIC_ERROR_MESSAGE, data: null });
 	});
 
 	it('never leaks the original error message to the client', () => {
@@ -69,10 +68,8 @@ describe('UnknownExceptionFilter', () => {
 			errorType: 'object',
 			msg: 'Unhandled exception',
 		});
-		expect(json).toHaveBeenCalledWith({
-			statusCode: 500,
-			message: GENERIC_ERROR_MESSAGE,
-		});
+		expect(json).toHaveBeenCalledWith(ResponseBody.failure(GENERIC_ERROR_MESSAGE));
+		expect(json).toHaveBeenCalledWith({ ok: false, msg: GENERIC_ERROR_MESSAGE, data: null });
 	});
 
 	it('handles a thrown undefined', () => {

@@ -13,6 +13,11 @@ export function buildLoggerOptions(level: string): { pinoHttp: Options } {
 					'res.headers["set-cookie"]',
 					'req.body.password',
 					'req.body.access_token',
+					// Free-form operation payloads may embed credentials or connection strings.
+					'req.body.sqlCode',
+					'req.body.manifest',
+					'req.body.playbook',
+					'req.body.kubectlCommand',
 					'err.parameters',
 				],
 				censor: '[REDACTED]',

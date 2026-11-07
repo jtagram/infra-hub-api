@@ -61,19 +61,31 @@ describe('DatabaseHubApiService.listDatabases', () => {
 	it('returns one name per line of the debug message', async () => {
 		ansibleService.execute.mockResolvedValue(ok(debugOutput('postgres\napp\ntemplate_x\n')));
 
-		await expect(service.listDatabases(dto)).resolves.toEqual(['postgres', 'app', 'template_x']);
+		await expect(service.listDatabases(dto)).resolves.toEqual({
+			ok: true,
+			msg: 'Databases retrieved successfully',
+			data: { databases: ['postgres', 'app', 'template_x'] },
+		});
 	});
 
 	it('trims every line and drops empty ones', async () => {
 		ansibleService.execute.mockResolvedValue(ok(debugOutput('  a  \n\n\t\n b\r\n')));
 
-		await expect(service.listDatabases(dto)).resolves.toEqual(['a', 'b']);
+		await expect(service.listDatabases(dto)).resolves.toEqual({
+			ok: true,
+			msg: 'Databases retrieved successfully',
+			data: { databases: ['a', 'b'] },
+		});
 	});
 
 	it('returns an empty list for an empty message', async () => {
 		ansibleService.execute.mockResolvedValue(ok(debugOutput('')));
 
-		await expect(service.listDatabases(dto)).resolves.toEqual([]);
+		await expect(service.listDatabases(dto)).resolves.toEqual({
+			ok: true,
+			msg: 'Databases retrieved successfully',
+			data: { databases: [] },
+		});
 	});
 
 	it('does not write any operations log', async () => {

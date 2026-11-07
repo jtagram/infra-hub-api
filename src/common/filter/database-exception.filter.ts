@@ -2,6 +2,7 @@ import { ArgumentsHost, Catch, ExceptionFilter, HttpStatus } from '@nestjs/commo
 import { Response } from 'express';
 import { Logger } from 'nestjs-pino';
 import { TypeORMError } from 'typeorm';
+import { ResponseBody } from '../dto/response-body.dto';
 import { GENERIC_ERROR_MESSAGE } from './generic-error-message';
 
 @Catch(TypeORMError)
@@ -22,9 +23,8 @@ export class DatabaseExceptionFilter implements ExceptionFilter {
 			msg: 'Database error',
 		});
 
-		response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
-			statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-			message: GENERIC_ERROR_MESSAGE,
-		});
+		response
+			.status(HttpStatus.INTERNAL_SERVER_ERROR)
+			.json(ResponseBody.failure(GENERIC_ERROR_MESSAGE));
 	}
 }

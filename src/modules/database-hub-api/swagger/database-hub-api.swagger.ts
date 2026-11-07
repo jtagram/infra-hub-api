@@ -2,13 +2,15 @@ import { applyDecorators } from '@nestjs/common';
 import {
 	ApiBadGatewayResponse,
 	ApiBadRequestResponse,
-	ApiCreatedResponse,
-	ApiOkResponse,
 	ApiOperation,
 	ApiQuery,
 } from '@nestjs/swagger';
 import { OperationResult } from '../../../common/dto/operation-result.dto';
 import { ApiProtected } from '../../../common/swagger/api-protected.decorator';
+import {
+	ApiCreatedResponseBody,
+	ApiOkResponseBody,
+} from '../../../common/swagger/api-response-body.decorator';
 import { ListDatabasesResponse } from '../database-hub-api.dto';
 
 export const ApiListDatabases = () =>
@@ -31,9 +33,10 @@ export const ApiListDatabases = () =>
 			example: 'postgres',
 			required: true,
 		}),
-		ApiOkResponse({
+		ApiOkResponseBody({
 			description: 'Databases found in the deployment.',
 			type: ListDatabasesResponse,
+			msg: 'Databases retrieved successfully',
 		}),
 		ApiBadRequestResponse({
 			description:
@@ -53,13 +56,14 @@ export const ApiManageDatabase = () =>
 		ApiOperation({
 			summary: 'Run SQL in a database',
 			description:
-				'Executes the given SQL code in a database of a Postgres deployment through an Ansible playbook and stores an operation log entry. A failed playbook is not an HTTP error: it is reported in `executionResult` (`success: false`). Requires the `ADMIN` role in the infra-hub-api application.',
+				'Executes the given SQL code in a database of a Postgres deployment through an Ansible playbook and stores an operation log entry. A failed playbook is not an HTTP error: it is reported in `data.executionResult` (`success: false`) inside a successful envelope. Requires the `ADMIN` role in the infra-hub-api application.',
 		}),
 		ApiProtected(),
-		ApiCreatedResponse({
+		ApiCreatedResponseBody({
 			description:
-				'Operation executed and logged. Check `executionResult.success` for the Ansible outcome.',
+				'Operation executed and logged. `data.executionResult.success` carries the Ansible outcome.',
 			type: OperationResult,
+			msg: 'Database operation executed',
 		}),
 		ApiBadRequestResponse({
 			description:
@@ -72,13 +76,14 @@ export const ApiCreateDatabase = () =>
 		ApiOperation({
 			summary: 'Create a database',
 			description:
-				'Creates a database in a Postgres deployment through an Ansible playbook and stores an operation log entry. A failed playbook is not an HTTP error: it is reported in `executionResult` (`success: false`). Requires the `ADMIN` role in the infra-hub-api application.',
+				'Creates a database in a Postgres deployment through an Ansible playbook and stores an operation log entry. A failed playbook is not an HTTP error: it is reported in `data.executionResult` (`success: false`) inside a successful envelope. Requires the `ADMIN` role in the infra-hub-api application.',
 		}),
 		ApiProtected(),
-		ApiCreatedResponse({
+		ApiCreatedResponseBody({
 			description:
-				'Operation executed and logged. Check `executionResult.success` for the Ansible outcome.',
+				'Operation executed and logged. `data.executionResult.success` carries the Ansible outcome.',
 			type: OperationResult,
+			msg: 'Database creation executed',
 		}),
 		ApiBadRequestResponse({
 			description: [

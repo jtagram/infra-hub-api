@@ -28,7 +28,7 @@ import {
 	unknownKidAdminAuthorizationHeader,
 	wrongKeyAdminAuthorizationHeader,
 } from '../helpers/test-auth';
-import { bodyOf, ErrorBody } from '../helpers/response-types';
+import { bodyOf, dataOf, ErrorBody, messagesOf } from '../helpers/response-types';
 import { OperationResult } from '../../src/common/dto/operation-result.dto';
 
 const PSQL_AS_POSTGRES_USER_SCRIPT =
@@ -136,8 +136,12 @@ describe('POST /database-hub-api/manage-database (e2e)', () => {
 			const response = await post(validBody()).expect(201);
 
 			expect(response.body).toEqual({
-				executionResult: { success: true, stdout, stderr: '', exitCode: 0 },
-				logId: expect.stringMatching(/^[0-9a-f-]{36}$/),
+				ok: true,
+				msg: 'Database operation executed',
+				data: {
+					executionResult: { success: true, stdout, stderr: '', exitCode: 0 },
+					logId: expect.stringMatching(/^[0-9a-f-]{36}$/),
+				},
 			});
 		});
 
@@ -163,12 +167,12 @@ describe('POST /database-hub-api/manage-database (e2e)', () => {
 
 			const rows = await testApp.logRows();
 			expect(rows).toHaveLength(1);
-			expect(rows[0].id).toBe(bodyOf<OperationResult>(response).logId);
+			expect(rows[0].id).toBe(dataOf<OperationResult>(response).logId);
 			expect(rows[0].department).toBe(InfrastructureDepartment.DATABASE);
 			expect(rows[0].numberOfTicket).toBe(42);
 			expect(rows[0].instruction).toBe('CREATE TABLE users (id serial PRIMARY KEY);');
 			expect(JSON.parse(rows[0].response)).toEqual(
-				bodyOf<OperationResult>(response).executionResult,
+				dataOf<OperationResult>(response).executionResult,
 			);
 		});
 
@@ -195,7 +199,7 @@ describe('POST /database-hub-api/manage-database (e2e)', () => {
 
 			const response = await post(validBody()).expect(201);
 
-			expect(bodyOf<OperationResult>(response).executionResult).toEqual({
+			expect(dataOf<OperationResult>(response).executionResult).toEqual({
 				success: false,
 				stdout,
 				stderr: '',
@@ -205,9 +209,9 @@ describe('POST /database-hub-api/manage-database (e2e)', () => {
 			});
 			const rows = await testApp.logRows();
 			expect(rows).toHaveLength(1);
-			expect(rows[0].id).toBe(bodyOf<OperationResult>(response).logId);
+			expect(rows[0].id).toBe(dataOf<OperationResult>(response).logId);
 			expect(JSON.parse(rows[0].response)).toEqual(
-				bodyOf<OperationResult>(response).executionResult,
+				dataOf<OperationResult>(response).executionResult,
 			);
 		});
 
@@ -217,8 +221,9 @@ describe('POST /database-hub-api/manage-database (e2e)', () => {
 			const response = await post(validBody()).expect(500);
 
 			expect(response.body).toEqual({
-				statusCode: 500,
-				message: 'An unexpected error occurred. Please try again later.',
+				ok: false,
+				msg: 'An unexpected error occurred. Please try again later.',
+				data: null,
 			});
 			expect(testApp.process.calls).toHaveLength(1);
 			expect(await testApp.logRows()).toEqual([]);
@@ -237,8 +242,9 @@ describe('POST /database-hub-api/manage-database (e2e)', () => {
 				const response = await post(validBody()).expect(500);
 
 				expect(response.body).toEqual({
-					statusCode: 500,
-					message: 'An unexpected error occurred. Please try again later.',
+					ok: false,
+					msg: 'An unexpected error occurred. Please try again later.',
+					data: null,
 				});
 				expect(saveSpy).toHaveBeenCalledTimes(1);
 				// The side effect has already happened on the target host.
@@ -254,7 +260,7 @@ describe('POST /database-hub-api/manage-database (e2e)', () => {
 		it('returns 400 when the body is empty', async () => {
 			const response = await post({}).expect(400);
 
-			expect(bodyOf<ErrorBody>(response).message).toEqual(
+			expect(messagesOf(response)).toEqual(
 				expect.arrayContaining([
 					'numberOfTickets must be an integer number',
 					'namespace must be a string',
@@ -272,9 +278,7 @@ describe('POST /database-hub-api/manage-database (e2e)', () => {
 
 			const response = await post(body).expect(400);
 
-			expect(bodyOf<ErrorBody>(response).message).toEqual(
-				expect.arrayContaining(['namespace must be a string']),
-			);
+			expect(messagesOf(response)).toEqual(expect.arrayContaining(['namespace must be a string']));
 		});
 
 		it('returns 400 when deployment is missing', async () => {
@@ -283,9 +287,7 @@ describe('POST /database-hub-api/manage-database (e2e)', () => {
 
 			const response = await post(body).expect(400);
 
-			expect(bodyOf<ErrorBody>(response).message).toEqual(
-				expect.arrayContaining(['deployment must be a string']),
-			);
+			expect(messagesOf(response)).toEqual(expect.arrayContaining(['deployment must be a string']));
 		});
 
 		it('returns 400 when dbName is missing', async () => {
@@ -294,9 +296,7 @@ describe('POST /database-hub-api/manage-database (e2e)', () => {
 
 			const response = await post(body).expect(400);
 
-			expect(bodyOf<ErrorBody>(response).message).toEqual(
-				expect.arrayContaining(['dbName must be a string']),
-			);
+			expect(messagesOf(response)).toEqual(expect.arrayContaining(['dbName must be a string']));
 		});
 
 		it('returns 400 when sqlCode is missing', async () => {
@@ -305,9 +305,7 @@ describe('POST /database-hub-api/manage-database (e2e)', () => {
 
 			const response = await post(body).expect(400);
 
-			expect(bodyOf<ErrorBody>(response).message).toEqual(
-				expect.arrayContaining(['sqlCode must be a string']),
-			);
+			expect(messagesOf(response)).toEqual(expect.arrayContaining(['sqlCode must be a string']));
 		});
 
 		it('returns 400 when a string field is empty', async () => {
@@ -315,7 +313,7 @@ describe('POST /database-hub-api/manage-database (e2e)', () => {
 				validBody({ namespace: '', deployment: '', dbName: '', sqlCode: '' }),
 			).expect(400);
 
-			expect(bodyOf<ErrorBody>(response).message).toEqual([
+			expect(messagesOf(response)).toEqual([
 				'namespace should not be empty',
 				'deployment should not be empty',
 				'dbName should not be empty',
@@ -328,7 +326,7 @@ describe('POST /database-hub-api/manage-database (e2e)', () => {
 				400,
 			);
 
-			expect(bodyOf<ErrorBody>(response).message).toEqual(
+			expect(messagesOf(response)).toEqual(
 				expect.arrayContaining(['dbName must be a string', 'sqlCode must be a string']),
 			);
 		});
@@ -342,7 +340,7 @@ describe('POST /database-hub-api/manage-database (e2e)', () => {
 				}),
 			).expect(400);
 
-			expect(bodyOf<ErrorBody>(response).message).toEqual([
+			expect(messagesOf(response)).toEqual([
 				'namespace must be shorter than or equal to 63 characters',
 				'deployment must be shorter than or equal to 63 characters',
 				'dbName must be shorter than or equal to 63 characters',
@@ -365,7 +363,7 @@ describe('POST /database-hub-api/manage-database (e2e)', () => {
 		it('returns 400 when sqlCode is longer than 5000 characters', async () => {
 			const response = await post(validBody({ sqlCode: 'a'.repeat(5001) })).expect(400);
 
-			expect(bodyOf<ErrorBody>(response).message).toEqual([
+			expect(messagesOf(response)).toEqual([
 				'sqlCode must be shorter than or equal to 5000 characters',
 			]);
 			expect(testApp.process.calls).toEqual([]);
@@ -382,7 +380,7 @@ describe('POST /database-hub-api/manage-database (e2e)', () => {
 		it('returns 400 on an unknown property', async () => {
 			const response = await post(validBody({ superuser: true })).expect(400);
 
-			expect(bodyOf<ErrorBody>(response).message).toEqual(['property superuser should not exist']);
+			expect(messagesOf(response)).toEqual(['property superuser should not exist']);
 			expect(testApp.process.calls).toEqual([]);
 			expect(await testApp.logRows()).toEqual([]);
 		});
@@ -395,7 +393,7 @@ describe('POST /database-hub-api/manage-database (e2e)', () => {
 
 			const response = await post(body).expect(400);
 
-			expect(bodyOf<ErrorBody>(response).message).toEqual(
+			expect(messagesOf(response)).toEqual(
 				expect.arrayContaining([
 					'numberOfTickets must be an integer number',
 					'numberOfTickets should not be empty',
@@ -412,18 +410,14 @@ describe('POST /database-hub-api/manage-database (e2e)', () => {
 		it('returns 400 when numberOfTickets is a numeric string (no implicit conversion)', async () => {
 			const response = await post(validBody({ numberOfTickets: '5' })).expect(400);
 
-			expect(bodyOf<ErrorBody>(response).message).toEqual([
-				'numberOfTickets must be an integer number',
-			]);
+			expect(messagesOf(response)).toEqual(['numberOfTickets must be an integer number']);
 			expect(testApp.process.calls).toEqual([]);
 		});
 
 		it('returns 400 when numberOfTickets is not an integer', async () => {
 			const response = await post(validBody({ numberOfTickets: 1.5 })).expect(400);
 
-			expect(bodyOf<ErrorBody>(response).message).toEqual([
-				'numberOfTickets must be an integer number',
-			]);
+			expect(messagesOf(response)).toEqual(['numberOfTickets must be an integer number']);
 			expect(testApp.process.calls).toEqual([]);
 		});
 
@@ -454,37 +448,37 @@ describe('POST /database-hub-api/manage-database (e2e)', () => {
 		it('returns 401 when the request has no bearer token', async () => {
 			const response = await post(validBody(), null).expect(401);
 
-			expect(bodyOf<ErrorBody>(response).message).toBe('Missing or malformed bearer token');
+			expect(bodyOf<ErrorBody>(response).msg).toBe('Missing or malformed bearer token');
 		});
 
 		it('returns 401 for a non-bearer authorization scheme', async () => {
 			const response = await post(validBody(), 'Basic YWRtaW46YWRtaW4=').expect(401);
 
-			expect(bodyOf<ErrorBody>(response).message).toBe('Missing or malformed bearer token');
+			expect(bodyOf<ErrorBody>(response).msg).toBe('Missing or malformed bearer token');
 		});
 
 		it('returns 401 for a garbage token', async () => {
 			const response = await post(validBody(), 'Bearer not-a-jwt').expect(401);
 
-			expect(bodyOf<ErrorBody>(response).message).toBe('Invalid or expired token');
+			expect(bodyOf<ErrorBody>(response).msg).toBe('Invalid or expired token');
 		});
 
 		it('returns 401 for an expired token', async () => {
 			const response = await post(validBody(), expiredAdminAuthorizationHeader()).expect(401);
 
-			expect(bodyOf<ErrorBody>(response).message).toBe('Invalid or expired token');
+			expect(bodyOf<ErrorBody>(response).msg).toBe('Invalid or expired token');
 		});
 
 		it('returns 401 for a token signed with the wrong key', async () => {
 			const response = await post(validBody(), wrongKeyAdminAuthorizationHeader()).expect(401);
 
-			expect(bodyOf<ErrorBody>(response).message).toBe('Invalid or expired token');
+			expect(bodyOf<ErrorBody>(response).msg).toBe('Invalid or expired token');
 		});
 
 		it('returns 401 for a token with an unknown kid', async () => {
 			const response = await post(validBody(), unknownKidAdminAuthorizationHeader()).expect(401);
 
-			expect(bodyOf<ErrorBody>(response).message).toBe('Invalid or expired token');
+			expect(bodyOf<ErrorBody>(response).msg).toBe('Invalid or expired token');
 		});
 
 		it('authenticates before validating: an invalid payload without token is a 401', async () => {
@@ -510,7 +504,7 @@ describe('POST /database-hub-api/manage-database (e2e)', () => {
 				}),
 			).expect(403);
 
-			expect(bodyOf<ErrorBody>(response).message).toBe('You do not have the required role');
+			expect(bodyOf<ErrorBody>(response).msg).toBe('You do not have the required role');
 			expect(testApp.process.calls).toEqual([]);
 			expect(await testApp.logRows()).toEqual([]);
 		});
@@ -538,7 +532,7 @@ describe('POST /database-hub-api/manage-database (e2e)', () => {
 				}),
 			).expect(403);
 
-			expect(bodyOf<ErrorBody>(response).message).toBe(
+			expect(bodyOf<ErrorBody>(response).msg).toBe(
 				'This token was not issued for the infra-hub-api application',
 			);
 			expect(testApp.process.calls).toEqual([]);
@@ -552,8 +546,9 @@ describe('POST /database-hub-api/manage-database (e2e)', () => {
 			).expect(500);
 
 			expect(response.body).toEqual({
-				statusCode: 500,
-				message: 'An unexpected error occurred. Please try again later.',
+				ok: false,
+				msg: 'An unexpected error occurred. Please try again later.',
+				data: null,
 			});
 			expect(testApp.process.calls).toEqual([]);
 			expect(await testApp.logRows()).toEqual([]);
@@ -567,7 +562,7 @@ describe('POST /database-hub-api/manage-database (e2e)', () => {
 				}),
 			).expect(500);
 
-			expect(bodyOf<ErrorBody>(response).statusCode).toBe(500);
+			expect(bodyOf<ErrorBody>(response).ok).toBe(false);
 			expect(testApp.process.calls).toEqual([]);
 		});
 	});

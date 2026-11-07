@@ -89,7 +89,11 @@ describe('KubernetesHubApiService.listDeployments (in-memory db)', () => {
 			stdout: debugOutput('api web   worker\n'),
 		});
 
-		await expect(service.listDeployments(dto)).resolves.toEqual(['api', 'web', 'worker']);
+		await expect(service.listDeployments(dto)).resolves.toEqual({
+			ok: true,
+			msg: 'Deployments retrieved successfully',
+			data: { deployments: ['api', 'web', 'worker'] },
+		});
 	});
 
 	it('returns an empty list for an empty message', async () => {
@@ -98,7 +102,11 @@ describe('KubernetesHubApiService.listDeployments (in-memory db)', () => {
 			stdout: debugOutput(''),
 		});
 
-		await expect(service.listDeployments(dto)).resolves.toEqual([]);
+		await expect(service.listDeployments(dto)).resolves.toEqual({
+			ok: true,
+			msg: 'Deployments retrieved successfully',
+			data: { deployments: [] },
+		});
 	});
 
 	it('does not write any operations log', async () => {

@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { OperationResult } from '../../common/dto/operation-result.dto';
+import { ResponseBody } from '../../common/dto/response-body.dto';
 import { Roles } from '../../common/guards/roles.decorator';
 import { Role } from '../../common/roles/role.enum';
 import { KubernetesHubApiService } from './kubernates-hub-api.service';
@@ -24,22 +25,27 @@ export class KubernetesHubApiController {
 	@Get('list-deployments')
 	@ApiListDeployments()
 	@Roles(Role.ADMIN)
-	async listDeployments(@Query() dto: ListDeploymentsDto): Promise<ListDeploymentsResponse> {
-		const deployments = await this.kubernetesHubApiService.listDeployments(dto);
-		return { deployments };
+	listDeployments(
+		@Query() dto: ListDeploymentsDto,
+	): Promise<ResponseBody<ListDeploymentsResponse>> {
+		return this.kubernetesHubApiService.listDeployments(dto);
 	}
 
 	@Post('manage-manifest')
 	@ApiManageManifest()
 	@Roles(Role.ADMIN)
-	async manageKubernatesManifest(@Body() dto: ManageKubernetesDto): Promise<OperationResult> {
+	manageKubernatesManifest(
+		@Body() dto: ManageKubernetesDto,
+	): Promise<ResponseBody<OperationResult>> {
 		return this.kubernetesHubApiService.manageKubernatesManifest(dto);
 	}
 
 	@Post('execute-kubectl')
 	@ApiExecuteKubectl()
 	@Roles(Role.ADMIN)
-	async executeKubectlCommand(@Body() dto: ExecuteKubectlCommandDto): Promise<OperationResult> {
+	executeKubectlCommand(
+		@Body() dto: ExecuteKubectlCommandDto,
+	): Promise<ResponseBody<OperationResult>> {
 		return this.kubernetesHubApiService.executeKubectlCommand(dto);
 	}
 }

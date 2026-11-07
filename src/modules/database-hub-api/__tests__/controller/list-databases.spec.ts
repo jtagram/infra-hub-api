@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { RequestMethod } from '@nestjs/common';
+import { ResponseBody } from '../../../../common/dto/response-body.dto';
 import { ROLES_KEY } from '../../../../common/guards/roles.decorator';
 import { Role } from '../../../../common/roles/role.enum';
 import { DatabaseHubApiController } from '../../database-hub-api.controller';
-import { ListDatabasesDto } from '../../database-hub-api.dto';
+import { ListDatabasesDto, ListDatabasesResponse } from '../../database-hub-api.dto';
 import { DatabaseHubApiService } from '../../database-hub-api.service';
 import { prototypeMethod } from '../../../../../test/helpers/prototype-method';
 
@@ -16,14 +17,17 @@ jest.mock('@nestjs/config', () => ({ ConfigService: class ConfigService {} }));
 
 describe('DatabaseHubApiController.listDatabases', () => {
 	let service: {
-		listDatabases: jest.Mock<(dto: ListDatabasesDto) => Promise<string[]>>;
+		listDatabases: jest.Mock<
+			(dto: ListDatabasesDto) => Promise<ResponseBody<ListDatabasesResponse>>
+		>;
 	};
 	let controller: DatabaseHubApiController;
 	const handler = prototypeMethod(DatabaseHubApiController.prototype, 'listDatabases');
 
 	beforeEach(() => {
 		service = {
-			listDatabases: jest.fn<(dto: ListDatabasesDto) => Promise<string[]>>(),
+			listDatabases:
+				jest.fn<(dto: ListDatabasesDto) => Promise<ResponseBody<ListDatabasesResponse>>>(),
 		};
 		controller = new DatabaseHubApiController(service as unknown as DatabaseHubApiService);
 	});
@@ -50,23 +54,25 @@ describe('DatabaseHubApiController.listDatabases', () => {
 		expect(Object.keys(args)).toEqual([expect.stringMatching(/^4:0$/)]);
 	});
 
-	it('delegates to the service and wraps the names in { databases }', async () => {
-		service.listDatabases.mockResolvedValue(['postgres', 'app']);
+	it('delegates to the service and returns its envelope untouched', async () => {
+		service.listDatabases.mockResolvedValue(
+			ResponseBody.success('ok', { databases: ['postgres', 'app'] }),
+		);
 		const dto = { namespace: 'databases', deployment: 'postgres' };
 
-		await expect(controller.listDatabases(dto)).resolves.toEqual({
-			databases: ['postgres', 'app'],
-		});
+		await expect(controller.listDatabases(dto)).resolves.toEqual(
+			ResponseBody.success('ok', { databases: ['postgres', 'app'] }),
+		);
 
 		expect(service.listDatabases).toHaveBeenCalledWith(dto);
 	});
 
 	it('returns an empty list when there are no databases', async () => {
-		service.listDatabases.mockResolvedValue([]);
+		service.listDatabases.mockResolvedValue(ResponseBody.success('ok', { databases: [] }));
 
-		await expect(controller.listDatabases({ namespace: 'n', deployment: 'd' })).resolves.toEqual({
-			databases: [],
-		});
+		await expect(controller.listDatabases({ namespace: 'n', deployment: 'd' })).resolves.toEqual(
+			ResponseBody.success('ok', { databases: [] }),
+		);
 	});
 
 	it('propagates the service errors', async () => {

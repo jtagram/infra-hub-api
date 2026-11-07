@@ -1,9 +1,15 @@
-/** Error body produced by Nest's exception layer / the global filter. */
+/** Error envelope produced by the global exception filters: `{ ok: false, msg, data: null }`. */
 export interface ErrorBody {
-	statusCode: number;
-	error?: string;
-	/** `string[]` for ValidationPipe failures, `string` otherwise. */
-	message: string | string[];
+	ok: false;
+	msg: string;
+	data: null;
+}
+
+/** Success envelope: `{ ok: true, msg, data }`. */
+export interface SuccessBody<T> {
+	ok: true;
+	msg: string;
+	data: T;
 }
 
 /**
@@ -12,4 +18,19 @@ export interface ErrorBody {
  */
 export function bodyOf<T>(res: { body: unknown }): T {
 	return res.body as T;
+}
+
+/** The `data` payload of a success envelope. */
+export function dataOf<T>(res: { body: unknown }): T {
+	return bodyOf<SuccessBody<T>>(res).data;
+}
+
+/**
+ * ValidationPipe failures are joined with ', ' into `msg` by the HTTP filter.
+ * Splits them back, only at the start of the next class-validator message
+ * (`<property> must|should ...` or `property <x> should not exist`) so that
+ * enum messages such as "one of the following values: a, b, c" stay intact.
+ */
+export function messagesOf(res: { body: unknown }): string[] {
+	return bodyOf<ErrorBody>(res).msg.split(/, (?=\w+ (?:must|should)\b|property )/);
 }

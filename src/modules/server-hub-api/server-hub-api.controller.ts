@@ -1,6 +1,7 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { OperationResult } from '../../common/dto/operation-result.dto';
+import { ResponseBody } from '../../common/dto/response-body.dto';
 import { Roles } from '../../common/guards/roles.decorator';
 import { Role } from '../../common/roles/role.enum';
 import { ServerHubApiService } from './server-hub-api.service';
@@ -15,7 +16,7 @@ export class ServerHubApiController {
 	@Post('manage-server')
 	@ApiManageServer()
 	@Roles(Role.ADMIN)
-	async manageServer(@Body() dto: ManageServerDto): Promise<OperationResult> {
+	manageServer(@Body() dto: ManageServerDto): Promise<ResponseBody<OperationResult>> {
 		return this.serverHubApiService.manageServer(dto);
 	}
 }

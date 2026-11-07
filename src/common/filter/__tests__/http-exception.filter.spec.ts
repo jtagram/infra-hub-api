@@ -9,6 +9,7 @@ import {
 	NotFoundException,
 } from '@nestjs/common';
 import { Logger } from 'nestjs-pino';
+import { ResponseBody } from '../../dto/response-body.dto';
 import { HttpExceptionFilter } from '../http-exception.filter';
 
 describe('HttpExceptionFilter', () => {
@@ -28,29 +29,43 @@ describe('HttpExceptionFilter', () => {
 		filter = new HttpExceptionFilter(logger as unknown as Logger);
 	});
 
-	it('answers with the exception status and its own response body', () => {
-		const exception = new BadRequestException(['name must not be empty']);
+	it('answers with the exception status and a failure envelope', () => {
+		filter.catch(new NotFoundException('missing'), host);
 
-		filter.catch(exception, host);
+		expect(status).toHaveBeenCalledWith(404);
+		expect(json).toHaveBeenCalledWith(ResponseBody.failure('missing'));
+		expect(json).toHaveBeenCalledWith({ ok: false, msg: 'missing', data: null });
+	});
+
+	it('joins validation message arrays with ", "', () => {
+		filter.catch(new BadRequestException(['name must not be empty', 'age must be an int']), host);
 
 		expect(status).toHaveBeenCalledWith(400);
-		expect(json).toHaveBeenCalledWith(exception.getResponse());
+		expect(json).toHaveBeenCalledWith(
+			ResponseBody.failure('name must not be empty, age must be an int'),
+		);
 	});
 
-	it('keeps a custom object body untouched', () => {
-		const body = { statusCode: 422, message: 'custom', extra: true };
-
-		filter.catch(new HttpException(body, 422), host);
+	it('uses the message of a custom object body', () => {
+		filter.catch(new HttpException({ statusCode: 422, message: 'custom', extra: true }, 422), host);
 
 		expect(status).toHaveBeenCalledWith(422);
-		expect(json).toHaveBeenCalledWith(body);
+		expect(json).toHaveBeenCalledWith(ResponseBody.failure('custom'));
 	});
 
-	it('keeps a plain string body untouched', () => {
+	it('uses a plain string body as the message', () => {
 		filter.catch(new HttpException('plain text', HttpStatus.CONFLICT), host);
 
 		expect(status).toHaveBeenCalledWith(409);
-		expect(json).toHaveBeenCalledWith('plain text');
+		expect(json).toHaveBeenCalledWith(ResponseBody.failure('plain text'));
+	});
+
+	it('falls back to the exception message when the body has no string message', () => {
+		const exception = new HttpException({ statusCode: 418 }, 418);
+
+		filter.catch(exception, host);
+
+		expect(json).toHaveBeenCalledWith(ResponseBody.failure(exception.message));
 	});
 
 	it('logs a 4xx exception as a warning, not as an error', () => {

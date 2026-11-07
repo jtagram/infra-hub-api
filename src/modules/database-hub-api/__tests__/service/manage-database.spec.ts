@@ -115,8 +115,8 @@ describe('DatabaseHubApiService.manageDatabase (in-memory db)', () => {
 		const result = await service.manageDatabase(dto);
 
 		const [log] = await repository.find();
-		expect(result.executionResult).toEqual(SUCCESS);
-		expect(result.logId).toBe(log.id);
+		expect(result.data?.executionResult).toEqual(SUCCESS);
+		expect(result.data?.logId).toBe(log.id);
 	});
 
 	it('logs and returns a failed execution too (it is not turned into an HTTP error)', async () => {
@@ -124,7 +124,7 @@ describe('DatabaseHubApiService.manageDatabase (in-memory db)', () => {
 
 		const result = await service.manageDatabase(dto);
 
-		expect(result.executionResult).toEqual(FAILURE);
+		expect(result.data?.executionResult).toEqual(FAILURE);
 		const [log] = await repository.find();
 		expect(JSON.parse(log.response)).toEqual(FAILURE);
 	});
